@@ -12,7 +12,6 @@ import com.webank.wecross.stub.TransactionRequest;
 import com.webank.wecross.stub.TransactionResponse;
 import com.webank.wecross.stub.fabric.FabricCustomCommand.InstallChaincodeRequest;
 import com.webank.wecross.stub.fabric.FabricCustomCommand.InstantiateChaincodeRequest;
-import com.webank.wecross.stub.fabric.chaincode.ChaincodeHandler;
 import com.webank.wecross.stub.fabric.proxy.ProxyChaincodeDeployment;
 import com.webank.wecross.utils.FabricUtils;
 import com.webank.wecross.utils.TarUtils;
@@ -125,17 +124,18 @@ public class ProxyChaincodeTest {
                                         blockHeaderManager);
 
                         CompletableFuture<TransactionException> future1 = new CompletableFuture<>();
-                        ChaincodeHandler.asyncInstallChaincode(
-                                installRequest,
-                                connection,
-                                new Driver.Callback() {
-                                    @Override
-                                    public void onTransactionResponse(
-                                            TransactionException transactionException,
-                                            TransactionResponse transactionResponse) {
-                                        future1.complete(transactionException);
-                                    }
-                                });
+                        ((FabricDriver) driver)
+                                .asyncInstallChaincode(
+                                        installRequest,
+                                        connection,
+                                        new Driver.Callback() {
+                                            @Override
+                                            public void onTransactionResponse(
+                                                    TransactionException transactionException,
+                                                    TransactionResponse transactionResponse) {
+                                                future1.complete(transactionException);
+                                            }
+                                        });
                         try {
                             TransactionException e1 = future1.get(50, TimeUnit.SECONDS);
                             if (!e1.isSuccess()) {
@@ -166,17 +166,18 @@ public class ProxyChaincodeTest {
                         blockHeaderManager);
 
         CompletableFuture<TransactionException> future2 = new CompletableFuture<>();
-        ChaincodeHandler.asyncInstantiateChaincode(
-                instantiateRequest,
-                connection,
-                new Driver.Callback() {
-                    @Override
-                    public void onTransactionResponse(
-                            TransactionException transactionException,
-                            TransactionResponse transactionResponse) {
-                        future2.complete(transactionException);
-                    }
-                });
+        ((FabricDriver) driver)
+                .asyncInstantiateChaincode(
+                        instantiateRequest,
+                        connection,
+                        new Driver.Callback() {
+                            @Override
+                            public void onTransactionResponse(
+                                    TransactionException transactionException,
+                                    TransactionResponse transactionResponse) {
+                                future2.complete(transactionException);
+                            }
+                        });
 
         Assert.assertTrue(future2.get(80, TimeUnit.SECONDS).isSuccess());
 

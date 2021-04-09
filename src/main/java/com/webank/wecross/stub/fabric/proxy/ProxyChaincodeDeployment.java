@@ -11,9 +11,9 @@ import com.webank.wecross.stub.TransactionException;
 import com.webank.wecross.stub.fabric.FabricConnection;
 import com.webank.wecross.stub.fabric.FabricConnectionFactory;
 import com.webank.wecross.stub.fabric.FabricCustomCommand.InstallChaincodeRequest;
-import com.webank.wecross.stub.fabric.FabricCustomCommand.InstantiateChaincodeRequest;
 import com.webank.wecross.stub.fabric.FabricCustomCommand.PackageChaincodeRequest;
 import com.webank.wecross.stub.fabric.FabricCustomCommand.UpgradeChaincodeRequest;
+import com.webank.wecross.stub.fabric.FabricDriver;
 import com.webank.wecross.stub.fabric.FabricStubConfigParser;
 import com.webank.wecross.stub.fabric.FabricStubFactory;
 import com.webank.wecross.stub.fabric.chaincode.ChaincodeHandler;
@@ -386,11 +386,12 @@ public class ProxyChaincodeDeployment {
                         installChaincodeRequest, user, null, null, blockHeaderManager);
 
         CompletableFuture<TransactionException> future1 = new CompletableFuture<>();
-        ChaincodeHandler.asyncInstallChaincode(
-                installRequest,
-                connection,
-                (transactionException, transactionResponse) ->
-                        future1.complete(transactionException));
+        ((FabricDriver) driver)
+                .asyncInstallChaincode(
+                        installRequest,
+                        connection,
+                        (transactionException, transactionResponse) ->
+                                future1.complete(transactionException));
 
         TransactionException e1 = future1.get(80, TimeUnit.SECONDS);
         if (!e1.isSuccess()) {
@@ -525,62 +526,7 @@ public class ProxyChaincodeDeployment {
         upgrade(orgNames, connection, driver, admin, blockHeaderManager, chaincodeName, version);
         System.out.println("SUCCESS: " + chaincodeName + " has been upgraded to " + chainPath);
     }
-    /**
-     * @Description:实例化合约
-     *
-     * @params: [orgNames, connection, driver, user, blockHeaderManager, chaincodeName, version]
-     * @return: void @Author: mirsu @Date: 2020/10/30 17:22
-     */
-    public static void instantiate(
-            List<String> orgNames,
-            FabricConnection connection,
-            Driver driver,
-            Account user,
-            BlockHeaderManager blockHeaderManager,
-            String chaincodeName,
-            String version)
-            throws Exception {
-        System.out.println(
-                "Instantiating "
-                        + chaincodeName
-                        + ":"
-                        + version
-                        + " to "
-                        + orgNames.toString()
-                        + " ...");
-        String channelName = connection.getChannel().getName();
-        String language = "GO_LANG";
 
-        String[] args = new String[] {channelName};
-
-        InstantiateChaincodeRequest instantiateChaincodeRequest =
-                InstantiateChaincodeRequest.build()
-                        .setName(chaincodeName)
-                        .setVersion(version)
-                        .setOrgNames(orgNames.toArray(new String[] {}))
-                        .setChannelName(channelName)
-                        .setChaincodeLanguage(language)
-                        .setEndorsementPolicy("") // "OR ('Org1MSP.peer','Org2MSP.peer')"
-                        // .setTransientMap()
-                        .setArgs(args);
-        TransactionContext<InstantiateChaincodeRequest> instantiateRequest =
-                new TransactionContext<InstantiateChaincodeRequest>(
-                        instantiateChaincodeRequest, user, null, null, blockHeaderManager);
-
-        CompletableFuture<TransactionException> future2 = new CompletableFuture<>();
-        ChaincodeHandler.asyncInstantiateChaincode(
-                instantiateRequest,
-                connection,
-                (transactionException, transactionResponse) ->
-                        future2.complete(transactionException));
-
-        //        TransactionException e2 = future2.get(50, TimeUnit.SECONDS);
-        // 不设置等待时间
-        TransactionException e2 = future2.get();
-        if (!e2.isSuccess()) {
-            throw new Exception("ERROR: asyncCustomCommand instantiate error: " + e2.getMessage());
-        }
-    }
     /**
      * @Description: 升级合约
      *
@@ -618,11 +564,12 @@ public class ProxyChaincodeDeployment {
                         upgradeChaincodeRequest, user, null, null, blockHeaderManager);
 
         CompletableFuture<TransactionException> future2 = new CompletableFuture<>();
-        ChaincodeHandler.asyncUpgradeChaincode(
-                instantiateRequest,
-                connection,
-                (transactionException, transactionResponse) ->
-                        future2.complete(transactionException));
+        ((FabricDriver) driver)
+                .asyncUpgradeChaincode(
+                        instantiateRequest,
+                        connection,
+                        (transactionException, transactionResponse) ->
+                                future2.complete(transactionException));
 
         //        TransactionException e2 = future2.get(50, TimeUnit.SECONDS);
         TransactionException e2 = future2.get();

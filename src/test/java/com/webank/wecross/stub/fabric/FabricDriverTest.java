@@ -3,7 +3,6 @@ package com.webank.wecross.stub.fabric;
 import com.webank.wecross.common.FabricType;
 import com.webank.wecross.stub.*;
 import com.webank.wecross.stub.fabric.FabricCustomCommand.*;
-import com.webank.wecross.stub.fabric.chaincode.ChaincodeHandler;
 import com.webank.wecross.stub.fabric.proxy.ProxyChaincodeDeployment;
 import com.webank.wecross.utils.FabricUtils;
 import com.webank.wecross.utils.TarUtils;
@@ -393,7 +392,7 @@ public class FabricDriverTest {
                         installChaincodeRequest, admin, null, null, blockHeaderManager);
 
         CompletableFuture<TransactionException> future1 = new CompletableFuture<>();
-        ChaincodeHandler.asyncInstallChaincode(
+        driver.asyncInstallChaincode(
                 installRequest,
                 connection,
                 new Driver.Callback() {
@@ -426,7 +425,7 @@ public class FabricDriverTest {
                         instantiateChaincodeRequest, admin, null, null, blockHeaderManager);
 
         CompletableFuture<TransactionException> future2 = new CompletableFuture<>();
-        ChaincodeHandler.asyncInstantiateChaincode(
+        driver.asyncInstantiateChaincode(
                 instantiateRequest,
                 connection,
                 new Driver.Callback() {
