@@ -5,58 +5,51 @@ import com.webank.wecross.stub.*;
 import com.webank.wecross.stub.fabric.*;
 import com.webank.wecross.stub.fabric.FabricCustomCommand.*;
 import com.webank.wecross.utils.FabricUtils;
-import org.hyperledger.fabric.sdk.TransactionRequest;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import org.hyperledger.fabric.sdk.*;
+import org.hyperledger.fabric.sdk.TransactionRequest;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.exception.ProposalException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
-import java.nio.file.Paths;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
-
 /**
- * All rights Reserved, Designed By www.webank.com
- *
- * @version V1.0
- * @Title: ChaincodeHandler.java
- * @Package com.webank.wecross.stub.fabric.chaincode
- * @Description: 链码操作类
+ * @version V1.0 @Title: ChaincodeHandler.java @Package
+ *     com.webank.wecross.stub.fabric.chaincode @Description: 链码操作类
  * @author: mirsu
  * @date: 2020/11/3 13:57
- * @Copyright: 2020-2020/11/3  www.tbs.com Inc. All rights reserved.
- * <p>
- * 注意：本内容仅限于TBS项目组内部传阅，禁止外泄以及用于其他的商业目的
  */
 public class ChaincodeHandler {
 
     private static Logger logger = LoggerFactory.getLogger(ChaincodeHandler.class);
-    private ChaincodeHandler() {
 
-    }
+    private ChaincodeHandler() {}
 
     /**
      * @Description: 打包链码
-     * @params: [request]
-     * @return: LifecycleChaincodePackage
-     * @Author: mirsu
-     * @Date: 2020/11/3 14:41
      *
-     * @param request*/
-    public static LifecycleChaincodePackage packageChaincode(PackageChaincodeRequest request) throws TransactionException {
+     * @params: [request]
+     * @return: LifecycleChaincodePackage @Author: mirsu @Date: 2020/11/3 14:41
+     * @param request
+     */
+    public static LifecycleChaincodePackage packageChaincode(PackageChaincodeRequest request)
+            throws TransactionException {
         LifecycleChaincodePackage lifecycleChaincodePackage;
         try {
             request.check();
             String ccPath = request.getChaincodePath() + "/" + request.getChaincodeName();
-            lifecycleChaincodePackage = LifecycleChaincodePackage.fromSource(request.getChaincodeLabel(),
-                    Paths.get(request.getChaincodeSourcePath()),
-                    FabricType.stringTochainCodeType(request.getChaincodeType()),
-                    ccPath,
-                    Paths.get(request.getChaincodeMetainfoPath()));
+            lifecycleChaincodePackage =
+                    LifecycleChaincodePackage.fromSource(
+                            request.getChaincodeLabel(),
+                            Paths.get(request.getChaincodeSourcePath()),
+                            FabricType.stringTochainCodeType(request.getChaincodeType()),
+                            ccPath,
+                            Paths.get(request.getChaincodeMetainfoPath()));
         } catch (Exception e) {
             String errorMessage = "Fabric driver package exception: " + e;
             logger.error(errorMessage);
@@ -66,14 +59,16 @@ public class ChaincodeHandler {
     }
     /**
      * @Description: 安装链码2.0（以组织为维度）
+     *
      * @params: [hfClient, channel, orgName, lifecycleChaincodePackage]
-     * @return: java.lang.String
-     * @Author: mirsu
-     * @Date: 2020/11/5 10:47
-     **/
-    public static String installChaincode (HFClient hfClient,
-                                           Channel channel, Collection<Peer> peers,
-                                           LifecycleChaincodePackage lifecycleChaincodePackage) throws Exception {
+     * @return: java.lang.String @Author: mirsu @Date: 2020/11/5 10:47
+     */
+    public static String installChaincode(
+            HFClient hfClient,
+            Channel channel,
+            Collection<Peer> peers,
+            LifecycleChaincodePackage lifecycleChaincodePackage)
+            throws Exception {
 
         try {
             Collection<LifecycleInstallChaincodeProposalResponse> responses;
@@ -81,29 +76,44 @@ public class ChaincodeHandler {
             Collection<ProposalResponse> failed = new LinkedList<>();
 
             logger.info("Creating lifecycleInstallChaincodeRequest");
-            LifecycleInstallChaincodeRequest lifecycleInstallChaincodeRequest = hfClient.newLifecycleInstallChaincodeRequest();
-            lifecycleInstallChaincodeRequest.setLifecycleChaincodePackage(lifecycleChaincodePackage);
+            LifecycleInstallChaincodeRequest lifecycleInstallChaincodeRequest =
+                    hfClient.newLifecycleInstallChaincodeRequest();
+            lifecycleInstallChaincodeRequest.setLifecycleChaincodePackage(
+                    lifecycleChaincodePackage);
             lifecycleInstallChaincodeRequest.setProposalWaitTime(5 * 60 * 1000); // 等待5min
             logger.info("Sending lifecycleInstallChaincodeRequest to selected peers...");
             int numInstallProposal = peers.size();
-            responses = hfClient.sendLifecycleInstallChaincodeRequest(lifecycleInstallChaincodeRequest, peers);
+            responses =
+                    hfClient.sendLifecycleInstallChaincodeRequest(
+                            lifecycleInstallChaincodeRequest, peers);
             for (ProposalResponse response : responses) {
                 if (response.getStatus() == ProposalResponse.Status.SUCCESS) {
-                    logger.info("[√]Successful InstallChaincode proposal response Txid: {} from peer {}", response.getTransactionID(), response.getPeer().getName());
+                    logger.info(
+                            "[√]Successful InstallChaincode proposal response Txid: {} from peer {}",
+                            response.getTransactionID(),
+                            response.getPeer().getName());
                     successful.add(response);
                 } else {
                     failed.add(response);
                 }
             }
-            logger.info("Received {} InstallChaincode proposal responses. Successful+verified: {} . Failed: {}", numInstallProposal, successful.size(), failed.size());
+            logger.info(
+                    "Received {} InstallChaincode proposal responses. Successful+verified: {} . Failed: {}",
+                    numInstallProposal,
+                    successful.size(),
+                    failed.size());
 
             if (failed.size() > 0) {
                 ProposalResponse first = failed.iterator().next();
-                logger.error("[X] Not enough endorsers for install : {} . {}", successful.size(), first.getMessage());
+                logger.error(
+                        "[X] Not enough endorsers for install : {} . {}",
+                        successful.size(),
+                        first.getMessage());
                 throw new Exception();
             }
 
-            return ((LifecycleInstallChaincodeProposalResponse) successful.iterator().next()).getPackageId();
+            return ((LifecycleInstallChaincodeProposalResponse) successful.iterator().next())
+                    .getPackageId();
 
         } catch (InvalidArgumentException e1) {
             throw new Exception("InvalidArgumentException", e1);
@@ -115,14 +125,12 @@ public class ChaincodeHandler {
         }
     }
 
-
     /**
      * @Description: 异步安装链码
+     *
      * @params: [request, connection, callback]
-     * @return: void
-     * @Author: mirsu
-     * @Date: 2020/10/30 15:56
-     **/
+     * @return: void @Author: mirsu @Date: 2020/10/30 15:56
+     */
     @Deprecated
     public static void asyncInstallChaincode(
             TransactionContext<InstallChaincodeRequest> request,
@@ -148,9 +156,14 @@ public class ChaincodeHandler {
                         TransactionResponse response = new TransactionResponse();
                         TransactionException transactionException;
                         try {
-                            if (connectionResponse.getErrorCode() == FabricType.TransactionResponseStatus.SUCCESS) {
-                                response = FabricUtils.decodeTransactionResponse(connectionResponse.getData());
-                                response.setHash(EndorserRequestFactory.getTxIDFromEnvelopeBytes(envelopeRequestData));
+                            if (connectionResponse.getErrorCode()
+                                    == FabricType.TransactionResponseStatus.SUCCESS) {
+                                response =
+                                        FabricUtils.decodeTransactionResponse(
+                                                connectionResponse.getData());
+                                response.setHash(
+                                        EndorserRequestFactory.getTxIDFromEnvelopeBytes(
+                                                envelopeRequestData));
                             }
                             transactionException =
                                     new TransactionException(
@@ -158,12 +171,10 @@ public class ChaincodeHandler {
                                             connectionResponse.getErrorMessage());
                         } catch (Exception e) {
                             String errorMessage =
-                                    "Fabric driver install chaincode onResponse exception: "
-                                            + e;
+                                    "Fabric driver install chaincode onResponse exception: " + e;
                             logger.error(errorMessage);
                             transactionException =
-                                    TransactionException.Builder.newInternalException(
-                                            errorMessage);
+                                    TransactionException.Builder.newInternalException(errorMessage);
                         }
                         callback.onTransactionResponse(transactionException, response);
                     });
@@ -179,13 +190,12 @@ public class ChaincodeHandler {
     }
     /**
      * @Description: 异步实例化合约
+     *
      * @params: [request, connection, callback]
-     * @return: void
-     * @Author: mirsu
-     * @Date: 2020/10/30 17:08
-     **/
+     * @return: void @Author: mirsu @Date: 2020/10/30 17:08
+     */
     @Deprecated
-    public  static void asyncInstantiateChaincode(
+    public static void asyncInstantiateChaincode(
             TransactionContext<InstantiateChaincodeRequest> request,
             Connection connection,
             Driver.Callback callback) {
@@ -206,12 +216,13 @@ public class ChaincodeHandler {
                     TransactionParams.parseFrom(instantiateRequest.getData()).getData();
             connection.asyncSend(
                     instantiateRequest,
-                    endorserResponse -> asyncSendTransactionHandleEndorserResponse(
-                            request,
-                            envelopeRequestData,
-                            endorserResponse,
-                            connection,
-                            callback));
+                    endorserResponse ->
+                            asyncSendTransactionHandleEndorserResponse(
+                                    request,
+                                    envelopeRequestData,
+                                    endorserResponse,
+                                    connection,
+                                    callback));
 
         } catch (Exception e) {
             String errorMessage = "Fabric driver instantiate exception: " + e;
@@ -225,11 +236,10 @@ public class ChaincodeHandler {
 
     /**
      * @Description:异步更新合约
+     *
      * @params: [request, connection, callback]
-     * @return: void
-     * @Author: mirsu
-     * @Date: 2020/10/30 17:29
-     **/
+     * @return: void @Author: mirsu @Date: 2020/10/30 17:29
+     */
     @Deprecated
     public static void asyncUpgradeChaincode(
             TransactionContext<UpgradeChaincodeRequest> request,
@@ -251,14 +261,15 @@ public class ChaincodeHandler {
                     TransactionParams.parseFrom(upgradeRequest.getData()).getData();
             connection.asyncSend(
                     upgradeRequest,
-                    endorserResponse -> asyncSendTransactionHandleEndorserResponse(
-                            request,
-                            envelopeRequestData,
-                            endorserResponse,
-                            connection,
-                            callback));
+                    endorserResponse ->
+                            asyncSendTransactionHandleEndorserResponse(
+                                    request,
+                                    envelopeRequestData,
+                                    endorserResponse,
+                                    connection,
+                                    callback));
 
-            //todo
+            // todo
             System.out.println("upgradeRequest:->" + upgradeRequest.toString());
         } catch (Exception e) {
             String errorMessage = "Fabric driver upgrade exception: " + e;
@@ -269,6 +280,7 @@ public class ChaincodeHandler {
             callback.onTransactionResponse(transactionException, response);
         }
     }
+
     public static void asyncSendTransactionHandleEndorserResponse(
             TransactionContext<?> request,
             byte[] envelopeRequestData,
@@ -352,7 +364,7 @@ public class ChaincodeHandler {
                                         response =
                                                 FabricUtils.decodeTransactionResponse(
                                                         FabricTransaction.buildFromPayloadBytes(
-                                                                ordererPayloadToSign)
+                                                                        ordererPayloadToSign)
                                                                 .getOutputBytes());
                                         response.setHash(txID);
                                         response.setBlockNumber(txBlockNumber);
@@ -407,6 +419,7 @@ public class ChaincodeHandler {
             callback.onTransactionResponse(transactionException, response);
         }
     }
+
     public static void asyncVerifyTransactionOnChain(
             String txID,
             long blockNumber,
@@ -438,6 +451,7 @@ public class ChaincodeHandler {
                     }
                 });
     }
+
     public static void handleInstallCommand(
             Object[] args,
             Account account,
@@ -576,8 +590,7 @@ public class ChaincodeHandler {
                             } else {
                                 callback.onResponse(
                                         transactionException,
-                                        new String("Failed: ")
-                                                + transactionException.getMessage());
+                                        new String("Failed: ") + transactionException.getMessage());
                             }
                         }
                     });
@@ -593,7 +606,9 @@ public class ChaincodeHandler {
             callback.onResponse(e, new String("Failed: ") + e.getMessage());
         }
     }
-    private static void checkPackageRequest(TransactionContext<PackageChaincodeRequest> request) throws Exception {
+
+    private static void checkPackageRequest(TransactionContext<PackageChaincodeRequest> request)
+            throws Exception {
         if (request.getData() == null) {
             throw new Exception("Request data is null");
         }
@@ -607,8 +622,8 @@ public class ChaincodeHandler {
             throw new Exception(
                     "Illegal account type for fabric call: " + request.getAccount().getType());
         }
-
     }
+
     private static void checkInstallRequest(TransactionContext<InstallChaincodeRequest> request)
             throws Exception {
         if (request.getData() == null) {
@@ -626,8 +641,8 @@ public class ChaincodeHandler {
         }
     }
 
-    private static void checkInstantiateRequest(TransactionContext<InstantiateChaincodeRequest> request)
-            throws Exception {
+    private static void checkInstantiateRequest(
+            TransactionContext<InstantiateChaincodeRequest> request) throws Exception {
         if (request.getData() == null) {
             throw new Exception("Request data is null");
         }
@@ -659,7 +674,9 @@ public class ChaincodeHandler {
                     "Illegal account type for fabric call: " + request.getAccount().getType());
         }
     }
-    public static Collection<Peer> extractPeersFromChannel (Channel channel, String orgName) throws InvalidArgumentException {
+
+    public static Collection<Peer> extractPeersFromChannel(Channel channel, String orgName)
+            throws InvalidArgumentException {
         Collection<Peer> allPeers = channel.getPeers();
         if (!StringUtils.hasText(orgName)) {
             return allPeers;
@@ -669,24 +686,40 @@ public class ChaincodeHandler {
             for (Peer peer : allPeers) {
                 if (peer.getName().contains(orgName)) {
                     selectPeers.add(peer);
-                        isFind = true;
-                        break;
-                    }
+                    isFind = true;
+                    break;
                 }
-                if (!isFind) {
-                    throw new InvalidArgumentException(String.format("The specified peer %s does not exist in the current channel: %s.", orgName, channel.getName()));
-                }
+            }
+            if (!isFind) {
+                throw new InvalidArgumentException(
+                        String.format(
+                                "The specified peer %s does not exist in the current channel: %s.",
+                                orgName, channel.getName()));
+            }
             return selectPeers;
         }
     }
 
-    public static CompletableFuture<BlockEvent.TransactionEvent> approveForMyOrg(HFClient hfClient, Channel channel, Collection<Peer> peers, long sequence, String chaincodeName, String version, LifecycleChaincodeEndorsementPolicy lccEndorsementPolicy, ChaincodeCollectionConfiguration ccCollectionConfiguration, boolean initRequired, String packageId) throws Exception {
+    public static CompletableFuture<BlockEvent.TransactionEvent> approveForMyOrg(
+            HFClient hfClient,
+            Channel channel,
+            Collection<Peer> peers,
+            long sequence,
+            String chaincodeName,
+            String version,
+            LifecycleChaincodeEndorsementPolicy lccEndorsementPolicy,
+            ChaincodeCollectionConfiguration ccCollectionConfiguration,
+            boolean initRequired,
+            String packageId)
+            throws Exception {
         try {
 
             Collection<ProposalResponse> successful = new LinkedList<>();
             Collection<ProposalResponse> failed = new LinkedList<>();
 
-            LifecycleApproveChaincodeDefinitionForMyOrgRequest lifecycleApproveChaincodeDefinitionForMyOrgRequest = hfClient.newLifecycleApproveChaincodeDefinitionForMyOrgRequest();
+            LifecycleApproveChaincodeDefinitionForMyOrgRequest
+                    lifecycleApproveChaincodeDefinitionForMyOrgRequest =
+                            hfClient.newLifecycleApproveChaincodeDefinitionForMyOrgRequest();
             lifecycleApproveChaincodeDefinitionForMyOrgRequest.setPackageId(packageId);
             lifecycleApproveChaincodeDefinitionForMyOrgRequest.setChaincodeName(chaincodeName);
             lifecycleApproveChaincodeDefinitionForMyOrgRequest.setChaincodeVersion(version);
@@ -694,27 +727,43 @@ public class ChaincodeHandler {
             lifecycleApproveChaincodeDefinitionForMyOrgRequest.setInitRequired(initRequired);
 
             if (lccEndorsementPolicy != null) {
-                lifecycleApproveChaincodeDefinitionForMyOrgRequest.setChaincodeEndorsementPolicy(lccEndorsementPolicy);
+                lifecycleApproveChaincodeDefinitionForMyOrgRequest.setChaincodeEndorsementPolicy(
+                        lccEndorsementPolicy);
             }
 
             if (null != ccCollectionConfiguration) {
-                lifecycleApproveChaincodeDefinitionForMyOrgRequest.setChaincodeCollectionConfiguration(ccCollectionConfiguration);
+                lifecycleApproveChaincodeDefinitionForMyOrgRequest
+                        .setChaincodeCollectionConfiguration(ccCollectionConfiguration);
             }
 
             logger.info("Sending lifecycleApproveChaincodeRequest to selected peers...");
-            Collection<LifecycleApproveChaincodeDefinitionForMyOrgProposalResponse> responses = channel.sendLifecycleApproveChaincodeDefinitionForMyOrgProposal(lifecycleApproveChaincodeDefinitionForMyOrgRequest, peers);
+            Collection<LifecycleApproveChaincodeDefinitionForMyOrgProposalResponse> responses =
+                    channel.sendLifecycleApproveChaincodeDefinitionForMyOrgProposal(
+                            lifecycleApproveChaincodeDefinitionForMyOrgRequest, peers);
             for (ProposalResponse response : responses) {
-                if (response.isVerified() && response.getStatus() == ProposalResponse.Status.SUCCESS) {
+                if (response.isVerified()
+                        && response.getStatus() == ProposalResponse.Status.SUCCESS) {
                     successful.add(response);
-                    logger.info("[√] Succesful ApproveChaincode proposal response Txid: {} from peer {}", response.getTransactionID(), response.getPeer().getName());
+                    logger.info(
+                            "[√] Succesful ApproveChaincode proposal response Txid: {} from peer {}",
+                            response.getTransactionID(),
+                            response.getPeer().getName());
                 } else {
                     failed.add(response);
                 }
             }
-            logger.info("Received {} ApproveChaincode proposal responses. Successful+verified: {} . Failed:{}", responses.size(), successful.size(), failed.size());
+            logger.info(
+                    "Received {} ApproveChaincode proposal responses. Successful+verified: {} . Failed:{}",
+                    responses.size(),
+                    successful.size(),
+                    failed.size());
             if (failed.size() > 0) {
                 ProposalResponse first = failed.iterator().next();
-                logger.error("[X] Not enough endorsers for ApproveChaincode : {} endorser failed with {}. Was verified: {}", successful.size(), first.getMessage(), first.isVerified());
+                logger.error(
+                        "[X] Not enough endorsers for ApproveChaincode : {} endorser failed with {}. Was verified: {}",
+                        successful.size(),
+                        first.getMessage(),
+                        first.isVerified());
             }
             return channel.sendTransaction(successful);
         } catch (InvalidArgumentException e1) {
@@ -730,58 +779,80 @@ public class ChaincodeHandler {
     // peer lifecycle chaincode commit \
     // -o orderer.example.com:7050 \
     // --tls true \
-    // --cafile /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem \
+    // --cafile
+    // /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem \
     // --channelID mychannel \
     // --name mycc \
     // --peerAddresses peer0.org1.example.com:7051 \
-    // --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt \
+    // --tlsRootCertFiles
+    // /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt \
     // --peerAddresses peer0.org2.example.com:9051 \
-    // --tlsRootCertFiles /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt \
+    // --tlsRootCertFiles
+    // /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt \
     // --version 1 \
     // --sequence 1 \
     // --init-required
-    public static CompletableFuture<BlockEvent.TransactionEvent> commitChaincodeDefinition (HFClient hfClient,
-                                                                                            Channel channel,
-                                                                                            long sequence,
-                                                                                            String chaincodeName,
-                                                                                            String chaincodeVersion,
-                                                                                            LifecycleChaincodeEndorsementPolicy lccEndorsementPolicy,
-                                                                                            ChaincodeCollectionConfiguration chaincodeCollectionConfiguration,
-                                                                                            boolean initRequired,
-                                                                                            Collection<Peer> endorsingPeers) throws Exception {
+    public static CompletableFuture<BlockEvent.TransactionEvent> commitChaincodeDefinition(
+            HFClient hfClient,
+            Channel channel,
+            long sequence,
+            String chaincodeName,
+            String chaincodeVersion,
+            LifecycleChaincodeEndorsementPolicy lccEndorsementPolicy,
+            ChaincodeCollectionConfiguration chaincodeCollectionConfiguration,
+            boolean initRequired,
+            Collection<Peer> endorsingPeers)
+            throws Exception {
 
         try {
 
             Collection<ProposalResponse> successful = new LinkedList<>();
             Collection<ProposalResponse> failed = new LinkedList<>();
 
-            LifecycleCommitChaincodeDefinitionRequest lifecycleCommitChaincodeDefinitionRequest = hfClient.newLifecycleCommitChaincodeDefinitionRequest();
+            LifecycleCommitChaincodeDefinitionRequest lifecycleCommitChaincodeDefinitionRequest =
+                    hfClient.newLifecycleCommitChaincodeDefinitionRequest();
             lifecycleCommitChaincodeDefinitionRequest.setChaincodeName(chaincodeName);
             lifecycleCommitChaincodeDefinitionRequest.setChaincodeVersion(chaincodeVersion);
             lifecycleCommitChaincodeDefinitionRequest.setSequence(sequence);
             lifecycleCommitChaincodeDefinitionRequest.setInitRequired(initRequired);
             if (lccEndorsementPolicy != null) {
-                lifecycleCommitChaincodeDefinitionRequest.setChaincodeEndorsementPolicy(lccEndorsementPolicy);
+                lifecycleCommitChaincodeDefinitionRequest.setChaincodeEndorsementPolicy(
+                        lccEndorsementPolicy);
             }
 
             if (null != chaincodeCollectionConfiguration) {
-                lifecycleCommitChaincodeDefinitionRequest.setChaincodeCollectionConfiguration(chaincodeCollectionConfiguration);
+                lifecycleCommitChaincodeDefinitionRequest.setChaincodeCollectionConfiguration(
+                        chaincodeCollectionConfiguration);
             }
 
             logger.info("Sending lifecycleApproveChaincodeRequest to selected peers...");
-            Collection<LifecycleCommitChaincodeDefinitionProposalResponse>  responses = channel.sendLifecycleCommitChaincodeDefinitionProposal(lifecycleCommitChaincodeDefinitionRequest, endorsingPeers);
+            Collection<LifecycleCommitChaincodeDefinitionProposalResponse> responses =
+                    channel.sendLifecycleCommitChaincodeDefinitionProposal(
+                            lifecycleCommitChaincodeDefinitionRequest, endorsingPeers);
             for (ProposalResponse response : responses) {
-                if (response.isVerified() && response.getStatus() == ProposalResponse.Status.SUCCESS) {
+                if (response.isVerified()
+                        && response.getStatus() == ProposalResponse.Status.SUCCESS) {
                     successful.add(response);
-                    logger.info("[√] Succesful CommitChaincode proposal response Txid:{} from peer {}", response.getTransactionID(), response.getPeer().getName());
+                    logger.info(
+                            "[√] Succesful CommitChaincode proposal response Txid:{} from peer {}",
+                            response.getTransactionID(),
+                            response.getPeer().getName());
                 } else {
                     failed.add(response);
                 }
             }
-            logger.info("Received {} CommitChaincode proposal responses. Successful+verified: {} . Failed: {}", responses.size(), successful.size(), failed.size());
+            logger.info(
+                    "Received {} CommitChaincode proposal responses. Successful+verified: {} . Failed: {}",
+                    responses.size(),
+                    successful.size(),
+                    failed.size());
             if (failed.size() > 0) {
                 ProposalResponse first = failed.iterator().next();
-                logger.error("[X] Not enough endorsers for CommitChaincode : {} endorser failed with {}. Was verified: {}", successful.size(), first.getMessage(), first.isVerified());
+                logger.error(
+                        "[X] Not enough endorsers for CommitChaincode : {} endorser failed with {}. Was verified: {}",
+                        successful.size(),
+                        first.getMessage(),
+                        first.isVerified());
             }
 
             if (null == successful | successful.isEmpty()) {
@@ -802,27 +873,41 @@ public class ChaincodeHandler {
         }
     }
 
-    public static CompletableFuture<BlockEvent.TransactionEvent> initChaincode(HFClient hfClient, User user, Channel channel, boolean initRequired, String chaincodeName, String version, TransactionRequest.Type chainCodeType, String[] args) throws Exception {
+    public static CompletableFuture<BlockEvent.TransactionEvent> initChaincode(
+            HFClient hfClient,
+            User user,
+            Channel channel,
+            boolean initRequired,
+            String chaincodeName,
+            String version,
+            TransactionRequest.Type chainCodeType,
+            String[] args)
+            throws Exception {
         final String fcn = "init";
         boolean doInit = initRequired ? true : null;
 
-        return basicInvokeChaincode(hfClient, user, channel, fcn, doInit, chaincodeName, version, chainCodeType, args);
+        return basicInvokeChaincode(
+                hfClient, user, channel, fcn, doInit, chaincodeName, version, chainCodeType, args);
     }
-    private static CompletableFuture<BlockEvent.TransactionEvent> basicInvokeChaincode (HFClient hfClient,
-                                                                                        User userContext,
-                                                                                        Channel channel,
-                                                                                        String fcn,
-                                                                                        Boolean doInit,
-                                                                                        String chaincodeName,
-                                                                                        String chaincodeVersion,
-                                                                                        TransactionRequest.Type chaincodeType,
-                                                                                        String[] args) throws Exception {
+
+    private static CompletableFuture<BlockEvent.TransactionEvent> basicInvokeChaincode(
+            HFClient hfClient,
+            User userContext,
+            Channel channel,
+            String fcn,
+            Boolean doInit,
+            String chaincodeName,
+            String chaincodeVersion,
+            TransactionRequest.Type chaincodeType,
+            String[] args)
+            throws Exception {
         Collection<ProposalResponse> successful = new LinkedList<>();
         Collection<ProposalResponse> failed = new LinkedList<>();
 
         try {
 
-            TransactionProposalRequest transactionProposalRequest = hfClient.newTransactionProposalRequest();
+            TransactionProposalRequest transactionProposalRequest =
+                    hfClient.newTransactionProposalRequest();
             transactionProposalRequest.setChaincodeName(chaincodeName);
             transactionProposalRequest.setChaincodeVersion(chaincodeVersion);
             transactionProposalRequest.setChaincodeLanguage(chaincodeType);
@@ -838,39 +923,69 @@ public class ChaincodeHandler {
                 transactionProposalRequest.setInit(doInit);
             }
 
-            logger.info("Sending transaction proposal on channel {} to all peers with arguments: {}:{}.{}({})",
-                    channel.getName(), chaincodeName, chaincodeVersion, fcn, Arrays.asList(args));
-            Collection<ProposalResponse> responses = channel.sendTransactionProposal(transactionProposalRequest);
+            logger.info(
+                    "Sending transaction proposal on channel {} to all peers with arguments: {}:{}.{}({})",
+                    channel.getName(),
+                    chaincodeName,
+                    chaincodeVersion,
+                    fcn,
+                    Arrays.asList(args));
+            Collection<ProposalResponse> responses =
+                    channel.sendTransactionProposal(transactionProposalRequest);
             for (ProposalResponse response : responses) {
                 if (response.getStatus() == ChaincodeResponse.Status.SUCCESS) {
-                    logger.info("[√] Successful transaction proposal response Txid: {} from peer {}", response.getTransactionID(), response.getPeer().getName());
+                    logger.info(
+                            "[√] Successful transaction proposal response Txid: {} from peer {}",
+                            response.getTransactionID(),
+                            response.getPeer().getName());
                     successful.add(response);
                 } else {
-                    logger.error("[X] Failed transaction proposal response Txid: {} from peer {}", response.getTransactionID(), response.getPeer().getName());
+                    logger.error(
+                            "[X] Failed transaction proposal response Txid: {} from peer {}",
+                            response.getTransactionID(),
+                            response.getPeer().getName());
                     failed.add(response);
                 }
             }
 
-            // Check that all the proposals are consistent with each other. We should have only one set
+            // Check that all the proposals are consistent with each other. We should have only one
+            // set
             // where all the proposals above are consistent.
-            Collection<Set<ProposalResponse>> proposalConsistencySets = SDKUtils.getProposalConsistencySets(responses);
+            Collection<Set<ProposalResponse>> proposalConsistencySets =
+                    SDKUtils.getProposalConsistencySets(responses);
             if (proposalConsistencySets.size() != 1) {
-                logger.error("Expected only one set of consistent move proposal responses but got {}", proposalConsistencySets.size());
+                logger.error(
+                        "Expected only one set of consistent move proposal responses but got {}",
+                        proposalConsistencySets.size());
             }
 
-            logger.info("Received {} transaction proposal responses. Successful+verified: {} . Failed: {}", responses.size(), successful.size(),
+            logger.info(
+                    "Received {} transaction proposal responses. Successful+verified: {} . Failed: {}",
+                    responses.size(),
+                    successful.size(),
                     failed.size());
 
             if (failed.size() > 0) {
                 ProposalResponse firstTransactionProposalResponse = failed.iterator().next();
-                logger.error("Not enough endorsers for invoke({}:{}.{}({})):{} endorser error:{}. Was verified:{}",
-                        chaincodeName, chaincodeVersion, fcn, Arrays.asList(args), firstTransactionProposalResponse.getStatus().getStatus(),
-                        firstTransactionProposalResponse.getMessage(), firstTransactionProposalResponse.isVerified());
+                logger.error(
+                        "Not enough endorsers for invoke({}:{}.{}({})):{} endorser error:{}. Was verified:{}",
+                        chaincodeName,
+                        chaincodeVersion,
+                        fcn,
+                        Arrays.asList(args),
+                        firstTransactionProposalResponse.getStatus().getStatus(),
+                        firstTransactionProposalResponse.getMessage(),
+                        firstTransactionProposalResponse.isVerified());
             }
 
             logger.info("Successfully received transaction proposal responses.");
 
-            logger.info("Sending chaincode transaction：invoke({}:{}.{}({})) to orderer.", chaincodeName, chaincodeVersion, fcn, Arrays.asList(args));
+            logger.info(
+                    "Sending chaincode transaction：invoke({}:{}.{}({})) to orderer.",
+                    chaincodeName,
+                    chaincodeVersion,
+                    fcn,
+                    Arrays.asList(args));
 
             return channel.sendTransaction(successful);
         } catch (Exception e) {
@@ -879,15 +994,29 @@ public class ChaincodeHandler {
         }
     }
 
-    public static boolean queryCommitted(HFClient hfClient, Channel channel, String chaincodeName, Collection<Peer> peers, long sequence, boolean initRequired) throws Exception {
+    public static boolean queryCommitted(
+            HFClient hfClient,
+            Channel channel,
+            String chaincodeName,
+            Collection<Peer> peers,
+            long sequence,
+            boolean initRequired)
+            throws Exception {
         try {
-            QueryLifecycleQueryChaincodeDefinitionRequest queryLifecycleQueryChaincodeDefinitionRequest = hfClient.newQueryLifecycleQueryChaincodeDefinitionRequest();
+            QueryLifecycleQueryChaincodeDefinitionRequest
+                    queryLifecycleQueryChaincodeDefinitionRequest =
+                            hfClient.newQueryLifecycleQueryChaincodeDefinitionRequest();
             queryLifecycleQueryChaincodeDefinitionRequest.setChaincodeName(chaincodeName);
 
-            Collection<LifecycleQueryChaincodeDefinitionProposalResponse> responses = channel.lifecycleQueryChaincodeDefinition(queryLifecycleQueryChaincodeDefinitionRequest, peers);
+            Collection<LifecycleQueryChaincodeDefinitionProposalResponse> responses =
+                    channel.lifecycleQueryChaincodeDefinition(
+                            queryLifecycleQueryChaincodeDefinitionRequest, peers);
 
             if (peers.size() != responses.size()) {
-                throw new Exception(String.format("responses %d not same as peers %d.", responses.size(), peers.size()));
+                throw new Exception(
+                        String.format(
+                                "responses %d not same as peers %d.",
+                                responses.size(), peers.size()));
             }
 
             boolean checkResult = true;
@@ -898,38 +1027,55 @@ public class ChaincodeHandler {
                 if (ChaincodeResponse.Status.SUCCESS.equals(response.getStatus())) {
 
                     if (sequence != response.getSequence()) {
-                        logger.error("[X] With {} inconsistent -sequence，actually: {}, expect: {}", peer, response.getSequence(), sequence);
+                        logger.error(
+                                "[X] With {} inconsistent -sequence，actually: {}, expect: {}",
+                                peer,
+                                response.getSequence(),
+                                sequence);
                         checkResult = false;
                     }
 
                     if (initRequired != response.getInitRequired()) {
-                        logger.error("[X] With {} inconsistent -initRequired，actually: {}, expect: {}", peer, response.getInitRequired(), initRequired);
+                        logger.error(
+                                "[X] With {} inconsistent -initRequired，actually: {}, expect: {}",
+                                peer,
+                                response.getInitRequired(),
+                                initRequired);
                         checkResult = false;
                     }
 
-
                 } else {
-                    logger.error("[X] Received {} bad response, status: {}, message: {}.", peer, response.getStatus(), response.getMessage());
+                    logger.error(
+                            "[X] Received {} bad response, status: {}, message: {}.",
+                            peer,
+                            response.getStatus(),
+                            response.getMessage());
                 }
             }
             return checkResult;
 
-        }   catch (Exception e) {
+        } catch (Exception e) {
             throw new Exception(e);
         }
-
-
     }
 
-    public static boolean queryInstalled(HFClient hfClient, Collection<Peer> peers, String packageId, String chaincodeLabel) throws Exception {
+    public static boolean queryInstalled(
+            HFClient hfClient, Collection<Peer> peers, String packageId, String chaincodeLabel)
+            throws Exception {
         try {
 
-            final LifecycleQueryInstalledChaincodeRequest lifecycleQueryInstalledChaincodeRequest = hfClient.newLifecycleQueryInstalledChaincodeRequest();
+            final LifecycleQueryInstalledChaincodeRequest lifecycleQueryInstalledChaincodeRequest =
+                    hfClient.newLifecycleQueryInstalledChaincodeRequest();
             lifecycleQueryInstalledChaincodeRequest.setPackageID(packageId);
-            Collection<LifecycleQueryInstalledChaincodeProposalResponse> responses = hfClient.sendLifecycleQueryInstalledChaincode(lifecycleQueryInstalledChaincodeRequest, peers);
+            Collection<LifecycleQueryInstalledChaincodeProposalResponse> responses =
+                    hfClient.sendLifecycleQueryInstalledChaincode(
+                            lifecycleQueryInstalledChaincodeRequest, peers);
 
             if (peers.size() != responses.size()) {
-                throw new Exception(String.format("responses %d not same as peers %d.", responses.size(), peers.size()));
+                throw new Exception(
+                        String.format(
+                                "responses %d not same as peers %d.",
+                                responses.size(), peers.size()));
             }
 
             boolean found = false;
@@ -939,13 +1085,22 @@ public class ChaincodeHandler {
 
                 if (response.getStatus().equals(ChaincodeResponse.Status.SUCCESS)) {
                     if (chaincodeLabel.equals(response.getLabel())) {
-                        logger.info("[√] Peer {} returned back same label: {}", peerName, response.getLabel());
+                        logger.info(
+                                "[√] Peer {} returned back same label: {}",
+                                peerName,
+                                response.getLabel());
                         found = true;
                     } else {
-                        logger.info("[?] Peer {} returned back different label: {}", peerName, response.getLabel());
+                        logger.info(
+                                "[?] Peer {} returned back different label: {}",
+                                peerName,
+                                response.getLabel());
                     }
                 } else {
-                    logger.error("[X] Peer {} returned back bad status code: {}", peerName, response.getStatus());
+                    logger.error(
+                            "[X] Peer {} returned back bad status code: {}",
+                            peerName,
+                            response.getStatus());
                 }
             }
 

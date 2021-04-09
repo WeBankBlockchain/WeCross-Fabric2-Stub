@@ -8,13 +8,12 @@ import com.webank.wecross.stub.fabric.FabricCustomCommand.UpgradeCommand;
 import com.webank.wecross.stub.fabric.chaincode.ChaincodeHandler;
 import com.webank.wecross.stub.fabric.proxy.ProxyChaincodeResource;
 import com.webank.wecross.utils.FabricUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FabricDriver implements Driver {
     private Logger logger = LoggerFactory.getLogger(FabricDriver.class);
@@ -162,7 +161,8 @@ public class FabricDriver implements Driver {
                             if (connectionResponse.getErrorCode()
                                     == FabricType.TransactionResponseStatus.SUCCESS) {
                                 response =
-                                        FabricUtils.decodeTransactionResponse(connectionResponse.getData());
+                                        FabricUtils.decodeTransactionResponse(
+                                                connectionResponse.getData());
                                 response.setHash(
                                         EndorserRequestFactory.getTxIDFromEnvelopeBytes(data));
                             }
@@ -171,12 +171,10 @@ public class FabricDriver implements Driver {
                                             connectionResponse.getErrorCode(),
                                             connectionResponse.getErrorMessage());
                         } catch (Exception e) {
-                            String errorMessage =
-                                    "Fabric driver call onResponse exception: " + e;
+                            String errorMessage = "Fabric driver call onResponse exception: " + e;
                             logger.error(errorMessage);
                             transactionException =
-                                    TransactionException.Builder.newInternalException(
-                                            errorMessage);
+                                    TransactionException.Builder.newInternalException(errorMessage);
                         }
                         callback.onTransactionResponse(transactionException, response);
                     });
@@ -222,7 +220,8 @@ public class FabricDriver implements Driver {
                             if (connectionResponse.getErrorCode()
                                     == FabricType.TransactionResponseStatus.SUCCESS) {
                                 response =
-                                        FabricUtils.decodeTransactionResponse(connectionResponse.getData());
+                                        FabricUtils.decodeTransactionResponse(
+                                                connectionResponse.getData());
                                 response.setHash(
                                         EndorserRequestFactory.getTxIDFromEnvelopeBytes(data));
                             }
@@ -235,8 +234,7 @@ public class FabricDriver implements Driver {
                                     "Fabric driver callByProxy onResponse exception: " + e;
                             logger.error(errorMessage);
                             transactionException =
-                                    TransactionException.Builder.newInternalException(
-                                            errorMessage);
+                                    TransactionException.Builder.newInternalException(errorMessage);
                         }
                         callback.onTransactionResponse(transactionException, response);
                     });
@@ -316,8 +314,9 @@ public class FabricDriver implements Driver {
 
             connection.asyncSend(
                     endorserRequest,
-                    endorserResponse -> ChaincodeHandler.asyncSendTransactionHandleEndorserResponse(
-                            request, data, endorserResponse, connection, callback));
+                    endorserResponse ->
+                            ChaincodeHandler.asyncSendTransactionHandleEndorserResponse(
+                                    request, data, endorserResponse, connection, callback));
 
         } catch (Exception e) {
             String errorMessage = "Fabric driver call exception: " + e;
@@ -352,8 +351,9 @@ public class FabricDriver implements Driver {
 
             connection.asyncSend(
                     endorserRequest,
-                    endorserResponse -> ChaincodeHandler.asyncSendTransactionHandleEndorserResponse(
-                            request, data, endorserResponse, connection, callback));
+                    endorserResponse ->
+                            ChaincodeHandler.asyncSendTransactionHandleEndorserResponse(
+                                    request, data, endorserResponse, connection, callback));
 
         } catch (Exception e) {
             callback.onTransactionResponse(
@@ -476,9 +476,10 @@ public class FabricDriver implements Driver {
                                                                         fabricTransaction);
 
                                                         TransactionResponse transactionResponse =
-                                                                FabricUtils. decodeTransactionResponse(
-                                                                        fabricTransaction
-                                                                                .getOutputBytes());
+                                                                FabricUtils
+                                                                        .decodeTransactionResponse(
+                                                                                fabricTransaction
+                                                                                        .getOutputBytes());
                                                         transactionResponse.setHash(txID);
                                                         transactionResponse.setErrorCode(
                                                                 FabricType.TransactionResponseStatus
@@ -513,10 +514,6 @@ public class FabricDriver implements Driver {
                 });
     }
 
-
-
-
-
     @Override
     public void asyncCustomCommand(
             String command,
@@ -527,31 +524,28 @@ public class FabricDriver implements Driver {
             Connection connection,
             CustomCommandCallback callback) {
         switch (command) {
-//            package
-//            install
-//            appover
-//            commit
-//            init
+                //            package
+                //            install
+                //            appover
+                //            commit
+                //            init
             case InstallCommand.NAME:
-                ChaincodeHandler.handleInstallCommand(args, account, blockHeaderManager, connection, callback);
+                ChaincodeHandler.handleInstallCommand(
+                        args, account, blockHeaderManager, connection, callback);
                 break;
             case InstantiateCommand.NAME:
-                ChaincodeHandler.handleInstantiateCommand(args, account, blockHeaderManager, connection, callback);
+                ChaincodeHandler.handleInstantiateCommand(
+                        args, account, blockHeaderManager, connection, callback);
                 break;
             case UpgradeCommand.NAME:
-                ChaincodeHandler.handleUpgradeCommand(args, account, blockHeaderManager, connection, callback);
+                ChaincodeHandler.handleUpgradeCommand(
+                        args, account, blockHeaderManager, connection, callback);
                 break;
             default:
                 callback.onResponse(new Exception("Unsupported command for Fabric plugin"), null);
                 break;
         }
     }
-
-
-
-
-
-
 
     private void checkRequest(TransactionContext<TransactionRequest> request) throws Exception {
         if (request.getAccount() == null) {
@@ -602,8 +596,6 @@ public class FabricDriver implements Driver {
                     "Illegal account type for fabric call: " + request.getAccount().getType());
         }
     }
-
-
 
     private TransactionRequest parseFabricTransaction(FabricTransaction fabricTransaction)
             throws Exception {

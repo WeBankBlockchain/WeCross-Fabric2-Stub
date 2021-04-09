@@ -167,12 +167,14 @@ public class FabricTransaction {
             }
 
             public static class EndorsedAction {
-                private org.hyperledger.fabric.protos.peer.TransactionPackage.ChaincodeEndorsedAction
+                private org.hyperledger.fabric.protos.peer.TransactionPackage
+                                .ChaincodeEndorsedAction
                         chaincodeEndorsedAction;
                 private ByteString output;
 
                 public EndorsedAction(
-                        org.hyperledger.fabric.protos.peer.TransactionPackage.ChaincodeEndorsedAction
+                        org.hyperledger.fabric.protos.peer.TransactionPackage
+                                        .ChaincodeEndorsedAction
                                 chaincodeEndorsedAction)
                         throws Exception {
                     this.chaincodeEndorsedAction = chaincodeEndorsedAction;

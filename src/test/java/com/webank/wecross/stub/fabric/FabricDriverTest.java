@@ -3,20 +3,18 @@ package com.webank.wecross.stub.fabric;
 import com.webank.wecross.common.FabricType;
 import com.webank.wecross.stub.*;
 import com.webank.wecross.stub.fabric.FabricCustomCommand.*;
-import com.webank.wecross.stub.fabric.FabricCustomCommand.*;
 import com.webank.wecross.stub.fabric.chaincode.ChaincodeHandler;
 import com.webank.wecross.stub.fabric.proxy.ProxyChaincodeDeployment;
 import com.webank.wecross.utils.FabricUtils;
 import com.webank.wecross.utils.TarUtils;
-import org.hyperledger.fabric.protos.common.Common;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import org.hyperledger.fabric.protos.common.Common;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class FabricDriverTest {
     private FabricStubFactory fabricStubFactory;

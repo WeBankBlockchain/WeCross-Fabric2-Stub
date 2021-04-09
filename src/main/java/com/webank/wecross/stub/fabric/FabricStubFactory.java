@@ -1,26 +1,23 @@
 package com.webank.wecross.stub.fabric;
 
 import com.webank.wecross.account.FabricAccountFactory;
-import com.webank.wecross.stub.fabric.FabricCustomCommand.InstallCommand;
-import com.webank.wecross.stub.fabric.FabricCustomCommand.InstantiateCommand;
-import com.webank.wecross.stub.fabric.performance.PerformanceTest;
-import com.webank.wecross.stub.fabric.performance.ProxyTest;
-import com.webank.wecross.stub.fabric.proxy.ProxyChaincodeDeployment;
 import com.webank.wecross.stub.Account;
 import com.webank.wecross.stub.Connection;
 import com.webank.wecross.stub.Driver;
 import com.webank.wecross.stub.Stub;
 import com.webank.wecross.stub.StubFactory;
 import com.webank.wecross.stub.WeCrossContext;
-
+import com.webank.wecross.stub.fabric.FabricCustomCommand.InstallCommand;
+import com.webank.wecross.stub.fabric.FabricCustomCommand.InstantiateCommand;
+import com.webank.wecross.stub.fabric.performance.PerformanceTest;
+import com.webank.wecross.stub.fabric.performance.ProxyTest;
+import com.webank.wecross.stub.fabric.proxy.ProxyChaincodeDeployment;
 import java.io.File;
 import java.io.FileWriter;
 import java.net.URL;
-
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 @Stub("Fabric2.0")
 public class FabricStubFactory implements StubFactory {

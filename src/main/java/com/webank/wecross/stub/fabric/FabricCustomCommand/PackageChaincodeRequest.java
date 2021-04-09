@@ -5,32 +5,23 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.webank.wecross.common.FabricType;
-
 import java.io.IOException;
 
 /**
  * All rights Reserved, Designed By www.webank.com
  *
- * @version V1.0
- * @Title: PackageChaincodeRequest.java
- * @Package com.webank.wecross.stub.fabric.FabricCustomCommand
- * @Description: 链码打包请求体
+ * @version V1.0 @Title: PackageChaincodeRequest.java @Package
+ *     com.webank.wecross.stub.fabric.FabricCustomCommand @Description: 链码打包请求体
  * @author: mirsu
- * @date: 2020/11/3 10:58
- * @Copyright: 2020-2020/11/3  www.tbs.com Inc. All rights reserved.
- * <p>
- * peer lifecycle chaincode package ./channel-artifacts/basic_02.tar.gz --path /opt/gopath/src/github.com/chaincode/public-go/go/ --label basic_02
- * <p>
- * chaincodeLabel 链码标签，如：mycc_1.0，一般 ${ccName}_${ccVersion}
- * chaincodeSourcePath 链码资源路径，如："/Workspace/java/code.aliyz.com/fabric/gocc/mycc"
- * chaincodeMetainfoPath 链码元数据路径，就是链码相关的 "/META-INF" 文件夹路径
- * chaincodePath 链码路径，如："github.com"
- * chaincodeName 链码名称，如："mycc"
- * chaincodeType 链码开发语言类型，枚举
- * 注意：本内容仅限于TBS项目组内部传阅，禁止外泄以及用于其他的商业目的
+ * @date: 2020/11/3 10:58 @Copyright: 2020-2020/11/3 www.tbs.com Inc. All rights reserved.
+ *     <p>peer lifecycle chaincode package ./channel-artifacts/basic_02.tar.gz --path
+ *     /opt/gopath/src/github.com/chaincode/public-go/go/ --label basic_02
+ *     <p>chaincodeLabel 链码标签，如：mycc_1.0，一般 ${ccName}_${ccVersion} chaincodeSourcePath
+ *     链码资源路径，如："/Workspace/java/code.aliyz.com/fabric/gocc/mycc" chaincodeMetainfoPath
+ *     链码元数据路径，就是链码相关的 "/META-INF" 文件夹路径 chaincodePath 链码路径，如："github.com" chaincodeName
+ *     链码名称，如："mycc" chaincodeType 链码开发语言类型，枚举 注意：本内容仅限于TBS项目组内部传阅，禁止外泄以及用于其他的商业目的
  */
 public class PackageChaincodeRequest implements ChaincodeRequest {
-
 
     private String chaincodeLabel;
     private String chaincodeName;
@@ -41,9 +32,7 @@ public class PackageChaincodeRequest implements ChaincodeRequest {
 
     private static ObjectMapper objectMapper = new ObjectMapper();
 
-    public PackageChaincodeRequest() {
-
-    }
+    public PackageChaincodeRequest() {}
 
     public static PackageChaincodeRequest build() {
         PackageChaincodeRequest defaultProposal = new PackageChaincodeRequest();
@@ -70,7 +59,6 @@ public class PackageChaincodeRequest implements ChaincodeRequest {
         return this;
     }
 
-
     public PackageChaincodeRequest setChaincodeMetainfoPath(String chaincodeMetainfoPath) {
         this.chaincodeMetainfoPath = chaincodeMetainfoPath;
         return this;
@@ -88,7 +76,6 @@ public class PackageChaincodeRequest implements ChaincodeRequest {
     public String getChaincodeSourcePath() {
         return chaincodeSourcePath;
     }
-
 
     public String getChaincodeLabel() {
         return chaincodeLabel;

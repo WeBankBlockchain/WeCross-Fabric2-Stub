@@ -3,15 +3,13 @@ package com.webank.wecross.stub.fabric.performance;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.webank.wecross.stub.fabric.EndorsementPolicyAnalyzer;
 import com.webank.wecross.stub.fabric.FabricConnection;
+import com.webank.wecross.stub.fabric.FabricStubFactory;
 import com.webank.wecross.stub.fabric.proxy.ProxyChaincodeResource;
 import com.webank.wecross.utils.FabricUtils;
-import com.webank.wecross.stub.fabric.FabricStubFactory;
-
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
-
 import org.hyperledger.fabric.sdk.BlockEvent;
 import org.hyperledger.fabric.sdk.ChaincodeID;
 import org.hyperledger.fabric.sdk.Channel;
@@ -19,11 +17,8 @@ import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.ProposalResponse;
 import org.hyperledger.fabric.sdk.TransactionProposalRequest;
-/**
- * @Description: 代理合约交易套件
- * @Author: mirsu
- * @Date: 2020/10/30 10:27
- **/
+
+/** @Description: 代理合约交易套件 @Author: mirsu @Date: 2020/10/30 10:27 */
 public class ProxySendTransactionSuite implements PerformanceSuite {
     private final String proxyName = ProxyChaincodeResource.DEFAULT_NAME;
     static final int BOUND = Integer.MAX_VALUE - 1;
@@ -72,14 +67,12 @@ public class ProxySendTransactionSuite implements PerformanceSuite {
             callback.onFailed("sacc query failed: " + e);
         }
     }
-/**
- * @Description: 向代理合约提交交易
- * @params: [callback]
- * @return: void
- * @Author: mirsu
- * @Date: 2020/10/30 10:23
- **/
-
+    /**
+     * @Description: 向代理合约提交交易
+     *
+     * @params: [callback]
+     * @return: void @Author: mirsu @Date: 2020/10/30 10:23
+     */
     private void sendTransactionOnceByProxy(PerformanceSuiteCallback callback) throws Exception {
         TransactionProposalRequest request = hfClient.newTransactionProposalRequest();
         String cc = proxyName;
@@ -89,10 +82,10 @@ public class ProxySendTransactionSuite implements PerformanceSuite {
 
         request.setArgs(buildSendTransactionProxyArgs());
         request.setProposalWaitTime(30000);
-        //发起交易提案
+        // 发起交易提案
         Collection<ProposalResponse> proposalResponse =
                 channel.sendTransactionProposal(request, endorsers);
-        //背书结果分析
+        // 背书结果分析
         EndorsementPolicyAnalyzer analyzer = new EndorsementPolicyAnalyzer(proposalResponse);
 
         if (!analyzer.allSuccess()) {
@@ -100,7 +93,7 @@ public class ProxySendTransactionSuite implements PerformanceSuite {
         }
 
         if (callback != null) {
-            //异步执行 结果回调
+            // 异步执行 结果回调
             channel.sendTransaction(proposalResponse)
                     .thenApply(
                             transactionEvent -> {
@@ -109,7 +102,7 @@ public class ProxySendTransactionSuite implements PerformanceSuite {
                             });
 
         } else {
-            //同步等待结果
+            // 同步等待结果
             BlockEvent.TransactionEvent event =
                     channel.sendTransaction(proposalResponse).get(20, TimeUnit.SECONDS);
             if (!event.isValid()) {

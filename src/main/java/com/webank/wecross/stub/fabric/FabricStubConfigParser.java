@@ -33,20 +33,14 @@ package com.webank.wecross.stub.fabric;
 import com.moandjiezana.toml.Toml;
 import com.webank.wecross.stub.fabric.proxy.ProxyChaincodeResource;
 import com.webank.wecross.utils.FabricUtils;
-
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * @Description: 配置解析器
- * @Author: mirsu
- * @Date: 2020/10/30 11:21
- **/
+/** @Description: 配置解析器 @Author: mirsu @Date: 2020/10/30 11:21 */
 public class FabricStubConfigParser {
     private static Logger logger = LoggerFactory.getLogger(FabricStubConfigParser.class);
 

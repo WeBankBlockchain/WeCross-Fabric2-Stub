@@ -1,7 +1,6 @@
 package com.webank.wecross.stub.fabric;
 
 import com.webank.wecross.common.FabricType;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;

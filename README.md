@@ -14,7 +14,7 @@ WeCross Fabric2 Stub是[WeCross](https://github.com/WeBankBlockchain/WeCross)用
 - Hyperledger Fabric链上资源访问
 - Hyperledger Fabric交易签名与解析
 
-##fabric2.0-stub 适配补充说明
+## fabric2.0-stub 适配补充说明
 
 - WeCrossProxy跨链合约
     跨连合约的安装支持通过控制台进行命令安装，实现方式参考了fabric-sdk官方，引入了 network_config.yaml等配置文件等
@@ -22,7 +22,7 @@ WeCross Fabric2 Stub是[WeCross](https://github.com/WeBankBlockchain/WeCross)用
     控制台安装合约的方式暂未进行适配（合约可通过BaaS平台进行安装）
 - 其他基本与fabric1.4-stub类似
 
-####接入Fabric链
+#### 接入Fabric链
 
 1. 添加账户
 
@@ -177,4 +177,4 @@ cd WeCross-Fabric1-Stub
 
 ## License
 
-WeCross Fabric1 Stub的开源协议为Apache License 2.0，详情参考[LICENSE](./LICENSE)。
+WeCross Fabric2 Stub的开源协议为Apache License 2.0，详情参考[LICENSE](./LICENSE)。

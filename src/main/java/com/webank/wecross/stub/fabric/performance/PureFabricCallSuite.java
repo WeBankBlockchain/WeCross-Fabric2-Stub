@@ -4,7 +4,6 @@ import com.webank.wecross.stub.fabric.EndorsementPolicyAnalyzer;
 import com.webank.wecross.stub.fabric.FabricConnection;
 import com.webank.wecross.stub.fabric.FabricStubFactory;
 import java.util.Collection;
-
 import org.hyperledger.fabric.sdk.ChaincodeID;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.HFClient;

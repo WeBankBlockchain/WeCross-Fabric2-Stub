@@ -3,11 +3,6 @@ package com.webank.wecross.utils;
 import com.google.protobuf.ByteString;
 import com.moandjiezana.toml.Toml;
 import com.webank.wecross.stub.TransactionResponse;
-import org.hyperledger.fabric.sdk.ChaincodeEndorsementPolicy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileWriter;
@@ -20,9 +15,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.Map;
+import org.hyperledger.fabric.sdk.ChaincodeEndorsementPolicy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 public class FabricUtils {
     private static Logger logger = LoggerFactory.getLogger(FabricUtils.class);
+
     public static byte[] longToBytes(long number) {
         BigInteger bigInteger = BigInteger.valueOf(number);
 
@@ -124,6 +124,7 @@ public class FabricUtils {
 
         return chaincodeEndorsementPolicy;
     }
+
     public static byte[] encodeTransactionResponse(TransactionResponse response) {
 
         switch (response.getResult().length) {

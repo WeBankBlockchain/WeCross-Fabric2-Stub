@@ -5,15 +5,9 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.webank.wecross.common.FabricType;
-
 import java.io.IOException;
 
-
-/**
- * @Description: 链码安装请求体
- * @Author: mirsu
- * @Date: 2020/10/30 11:35
- **/
+/** @Description: 链码安装请求体 @Author: mirsu @Date: 2020/10/30 11:35 */
 public class InstallChaincodeRequest {
     // Chaincode to install:
     // name: request -> resourceInfo -> properties -> chaincodeName

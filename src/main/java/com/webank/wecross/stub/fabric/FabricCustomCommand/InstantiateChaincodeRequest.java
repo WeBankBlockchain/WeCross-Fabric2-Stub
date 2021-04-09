@@ -8,12 +8,10 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.webank.wecross.common.FabricType;
 import com.webank.wecross.utils.FabricUtils;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.hyperledger.fabric.sdk.ChaincodeEndorsementPolicy;
 
 public class InstantiateChaincodeRequest {

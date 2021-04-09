@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
-
 import org.hyperledger.fabric.sdk.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -159,28 +158,44 @@ public class ChaincodeResourceManager {
 
     private Map<String, String> queryActiveChaincode() {
         Map<String, String> name2Version = new HashMap<>();
-        Collection<Peer> peers =  peersMap.values();
+        Collection<Peer> peers = peersMap.values();
         try {
-            LifecycleQueryInstalledChaincodesRequest request = hfClient.newLifecycleQueryInstalledChaincodesRequest();
-            QueryLifecycleQueryChaincodeDefinitionRequest queryLifecycleQueryChaincodeDefinitionRequest = hfClient.newQueryLifecycleQueryChaincodeDefinitionRequest();
-            Collection<LifecycleQueryInstalledChaincodesProposalResponse> responses = hfClient.sendLifecycleQueryInstalledChaincodes(request, peers);
+            LifecycleQueryInstalledChaincodesRequest request =
+                    hfClient.newLifecycleQueryInstalledChaincodesRequest();
+            QueryLifecycleQueryChaincodeDefinitionRequest
+                    queryLifecycleQueryChaincodeDefinitionRequest =
+                            hfClient.newQueryLifecycleQueryChaincodeDefinitionRequest();
+            Collection<LifecycleQueryInstalledChaincodesProposalResponse> responses =
+                    hfClient.sendLifecycleQueryInstalledChaincodes(request, peers);
             for (LifecycleQueryInstalledChaincodesProposalResponse respons : responses) {
-                Collection<LifecycleQueryInstalledChaincodesProposalResponse.LifecycleQueryInstalledChaincodesResult> results = respons.getLifecycleQueryInstalledChaincodesResult();
-                for (LifecycleQueryInstalledChaincodesProposalResponse.LifecycleQueryInstalledChaincodesResult result : results) {
+                Collection<
+                                LifecycleQueryInstalledChaincodesProposalResponse
+                                        .LifecycleQueryInstalledChaincodesResult>
+                        results = respons.getLifecycleQueryInstalledChaincodesResult();
+                for (LifecycleQueryInstalledChaincodesProposalResponse
+                                .LifecycleQueryInstalledChaincodesResult
+                        result : results) {
                     String label = result.getLabel();
                     String[] split = label.split("_");
-                    String  chaincodeName = split[0];
+                    String chaincodeName = split[0];
                     queryLifecycleQueryChaincodeDefinitionRequest.setChaincodeName(chaincodeName);
-                    Collection<LifecycleQueryChaincodeDefinitionProposalResponse> responses2 = channel.lifecycleQueryChaincodeDefinition(queryLifecycleQueryChaincodeDefinitionRequest, peers);
+                    Collection<LifecycleQueryChaincodeDefinitionProposalResponse> responses2 =
+                            channel.lifecycleQueryChaincodeDefinition(
+                                    queryLifecycleQueryChaincodeDefinitionRequest, peers);
                     if (responses2 == null || responses2.isEmpty()) {
                         continue;
                     }
                     for (LifecycleQueryChaincodeDefinitionProposalResponse respons2 : responses2) {
-                        if (respons2 == null || !ChaincodeResponse.Status.SUCCESS.equals(respons2.getStatus())) {
+                        if (respons2 == null
+                                || !ChaincodeResponse.Status.SUCCESS.equals(respons2.getStatus())) {
                             continue;
                         }
                         String version = respons2.getVersion();
-                        System.out.println("ActiveChaincode：chaincodeName-----> " + chaincodeName + "; version-----> " + version);
+                        System.out.println(
+                                "ActiveChaincode：chaincodeName-----> "
+                                        + chaincodeName
+                                        + "; version-----> "
+                                        + version);
                         name2Version.put(chaincodeName, version);
                     }
                 }
@@ -189,7 +204,7 @@ public class ChaincodeResourceManager {
         } catch (Exception e) {
             logger.warn("Could not get instantiated Chaincodes from:{} ", peers.toString());
         }
-       /* for (Peer peer : peersMap.values()) {
+        /* for (Peer peer : peersMap.values()) {
             try {
 
                 List<Query.ChaincodeInfo> chaincodeInfos = channel.queryInstantiatedChaincodes(peer);

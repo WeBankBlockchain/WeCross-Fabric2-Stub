@@ -1,5 +1,9 @@
 package com.webank.wecross.stub.fabric;
 
+import static com.webank.wecross.utils.FabricUtils.bytesToLong;
+import static com.webank.wecross.utils.FabricUtils.longToBytes;
+import static java.lang.String.format;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
 import com.webank.wecross.common.FabricType;
@@ -10,6 +14,10 @@ import com.webank.wecross.stub.Response;
 import com.webank.wecross.stub.fabric.FabricCustomCommand.InstantiateChaincodeRequest;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
+import java.io.ByteArrayInputStream;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import org.hyperledger.fabric.protos.common.Common;
 import org.hyperledger.fabric.protos.msp.Identities;
 import org.hyperledger.fabric.protos.orderer.Ab;
@@ -24,19 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
-import java.io.ByteArrayInputStream;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-
-import static com.webank.wecross.utils.FabricUtils.bytesToLong;
-import static com.webank.wecross.utils.FabricUtils.longToBytes;
-import static java.lang.String.format;
-/**
- * @Description: fabric 链接对象，用于链接fabric链 发起交易
- * @Author: mirsu
- * @Date: 2020/10/30 10:52
- **/
+/** @Description: fabric 链接对象，用于链接fabric链 发起交易 @Author: mirsu @Date: 2020/10/30 10:52 */
 public class FabricConnection implements Connection {
     private static ObjectMapper objectMapper = new ObjectMapper();
     private Logger logger = LoggerFactory.getLogger(FabricConnection.class);
@@ -71,7 +67,7 @@ public class FabricConnection implements Connection {
         this.threadPool = threadPool;
     }
 
-    //链接初始化
+    // 链接初始化
     public void start() throws Exception {
         this.blockListenerHandler =
                 channel.registerBlockListener(
@@ -209,8 +205,7 @@ public class FabricConnection implements Connection {
 
     private void handleAsyncCall(Request request, Connection.Callback callback) {
         // chaincode call is sync, use thread pool to simulate async for better performance
-        threadPool.execute(
-                () -> callback.onResponse(handleCall(request)));
+        threadPool.execute(() -> callback.onResponse(handleCall(request)));
     }
 
     private Response handleSendTransactionEndorser(Request request) {
@@ -228,8 +223,7 @@ public class FabricConnection implements Connection {
 
     private void handleAsyncSendTransactionEndorser(Request request, Connection.Callback callback) {
         // chaincode call is sync, use thread pool to simulate async for better performance
-        threadPool.execute(
-                () -> callback.onResponse(handleSendTransactionEndorser(request)));
+        threadPool.execute(() -> callback.onResponse(handleSendTransactionEndorser(request)));
     }
 
     private Response handleSendTransactionOrderer(Request request) {
@@ -255,12 +249,14 @@ public class FabricConnection implements Connection {
 
     private void handleAsyncSendTransactionOrderer(Request request, Connection.Callback callback) {
 
-        asyncSendTransactionOrderer(request, new SendTransactionOrdererCallback() {
-            @Override
-            public void onResponse(Response response) {
-                callback.onResponse(response);
-            }
-        });
+        asyncSendTransactionOrderer(
+                request,
+                new SendTransactionOrdererCallback() {
+                    @Override
+                    public void onResponse(Response response) {
+                        callback.onResponse(response);
+                    }
+                });
     }
 
     private Response handleGetBlockNumber(Request request) {
@@ -319,11 +315,10 @@ public class FabricConnection implements Connection {
 
     /**
      * @Description: 校验 orgSet 是否 全部包含 peerOrgSet
+     *
      * @params: [orgSet, peerOrgSet]
-     * @return: void
-     * @Author: mirsu
-     * @Date: 2020/10/30 16:02
-     **/
+     * @return: void @Author: mirsu @Date: 2020/10/30 16:02
+     */
     private void checkNonExistOrgSet(Collection<String> orgSet, Collection<String> peerOrgSet)
             throws Exception {
         String[] orgArray = orgSet.toArray(new String[] {});
@@ -402,8 +397,7 @@ public class FabricConnection implements Connection {
     private void handleAsyncInstallChaincodeProposal(
             Request request, Connection.Callback callback) {
         // send proposal is sync, use thread pool to simulate async for better performance
-        threadPool.execute(
-                () -> callback.onResponse(handleSendTransactionToOrgsEndorsor(request)));
+        threadPool.execute(() -> callback.onResponse(handleSendTransactionToOrgsEndorsor(request)));
     }
 
     private Response call(Request request, Collection<Peer> endorsers) {
@@ -445,6 +439,7 @@ public class FabricConnection implements Connection {
         }
         return response;
     }
+
     private Response call2(Request request, Collection<Peer> endorsers) {
         if (request.getType() != FabricType.ConnectionMessage.FABRIC2_CALL) {
             return FabricConnectionResponse.build()
@@ -578,8 +573,7 @@ public class FabricConnection implements Connection {
                                                                     .FABRIC_EXECUTE_CHAINCODE_FAILED)
                                                     .data(
                                                             new byte[] {
-                                                                transactionEvent
-                                                                        .getValidationCode()
+                                                                transactionEvent.getValidationCode()
                                                             });
                                     // error is TxValidationCode of fabric define in
                                     // Transaction.proto
@@ -598,12 +592,10 @@ public class FabricConnection implements Connection {
 
                                 return transactionEvent;
                             });
-// TODO: 2020/10/28 超时时间需要动态配置
+            // TODO: 2020/10/28 超时时间需要动态配置
             callback.setTimeout(
                     timeoutHandler.newTimeout(
-                            timeout -> callback.onTimeout(),
-                            20000,
-                            TimeUnit.MILLISECONDS));
+                            timeout -> callback.onTimeout(), 20000, TimeUnit.MILLISECONDS));
 
         } catch (Exception e) {
             FabricConnectionResponse response =
@@ -727,11 +719,11 @@ public class FabricConnection implements Connection {
                 anyAdded = true;
                 nOfEvents.addPeers(eventingPeers);
             }
-//            Collection<EventHub> eventHubs = channel.getEventHubs();
-//        if (!eventHubs.isEmpty()) {
-//                anyAdded = true;
-//                nOfEvents.addEventHubs(channel.getEventHubs());
-//            }
+            //            Collection<EventHub> eventHubs = channel.getEventHubs();
+            //        if (!eventHubs.isEmpty()) {
+            //                anyAdded = true;
+            //                nOfEvents.addEventHubs(channel.getEventHubs());
+            //            }
 
             if (!anyAdded) {
                 nOfEvents = Channel.NOfEvents.createNoEvents();
@@ -739,9 +731,8 @@ public class FabricConnection implements Connection {
 
             final boolean replyonly =
                     nOfEvents == Channel.NOfEvents.nofNoEvents
-                            || ( channel.getPeers(EnumSet.of(Peer.PeerRole.EVENT_SOURCE))
-                                            .isEmpty());
-            //channel.getEventHubs().isEmpty()
+                            || (channel.getPeers(EnumSet.of(Peer.PeerRole.EVENT_SOURCE)).isEmpty());
+            // channel.getEventHubs().isEmpty()
             //                                    &&
 
             CompletableFuture<BlockEvent.TransactionEvent> sret;
@@ -813,9 +804,12 @@ public class FabricConnection implements Connection {
                 fabricInnerFunction.sendProposalToPeers(endorsers, sp, transactionContext);
         return endorserResponses;
     }
-    private Collection<ProposalResponse> queryEndorser2(TransactionParams transactionParams, Collection<Peer> endorsers) throws Exception {
 
-        ProposalPackage.SignedProposal sp = ProposalPackage.SignedProposal.parseFrom(transactionParams.getData());
+    private Collection<ProposalResponse> queryEndorser2(
+            TransactionParams transactionParams, Collection<Peer> endorsers) throws Exception {
+
+        ProposalPackage.SignedProposal sp =
+                ProposalPackage.SignedProposal.parseFrom(transactionParams.getData());
         TransactionContext transactionContext = getTransactionContext(sp);
 
         User user = transactionContext.getUser();
@@ -826,10 +820,11 @@ public class FabricConnection implements Connection {
         QueryByChaincodeRequest queryByChaincodeRequest = hfClient.newQueryProposalRequest();
         queryByChaincodeRequest.setArgs(args);
         queryByChaincodeRequest.setFcn(method);
-//        queryByChaincodeRequest.setChaincodeName(chaincodeName);
-//        queryByChaincodeRequest.setChaincodeVersion(chaincodeVersion);
+        //        queryByChaincodeRequest.setChaincodeName(chaincodeName);
+        //        queryByChaincodeRequest.setChaincodeVersion(chaincodeVersion);
         queryByChaincodeRequest.setUserContext(user);
-        Collection<ProposalResponse> queryProposals = channel.queryByChaincode(queryByChaincodeRequest);
+        Collection<ProposalResponse> queryProposals =
+                channel.queryByChaincode(queryByChaincodeRequest);
 
         Collection<ProposalResponse> endorserResponses =
                 fabricInnerFunction.sendProposalToPeers(endorsers, sp, transactionContext);

@@ -24,7 +24,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
-
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -127,16 +126,16 @@ public class ProxyChaincodeTest {
 
                         CompletableFuture<TransactionException> future1 = new CompletableFuture<>();
                         ChaincodeHandler.asyncInstallChaincode(
-                                        installRequest,
-                                        connection,
-                                        new Driver.Callback() {
-                                            @Override
-                                            public void onTransactionResponse(
-                                                    TransactionException transactionException,
-                                                    TransactionResponse transactionResponse) {
-                                                future1.complete(transactionException);
-                                            }
-                                        });
+                                installRequest,
+                                connection,
+                                new Driver.Callback() {
+                                    @Override
+                                    public void onTransactionResponse(
+                                            TransactionException transactionException,
+                                            TransactionResponse transactionResponse) {
+                                        future1.complete(transactionException);
+                                    }
+                                });
                         try {
                             TransactionException e1 = future1.get(50, TimeUnit.SECONDS);
                             if (!e1.isSuccess()) {
@@ -168,16 +167,16 @@ public class ProxyChaincodeTest {
 
         CompletableFuture<TransactionException> future2 = new CompletableFuture<>();
         ChaincodeHandler.asyncInstantiateChaincode(
-                        instantiateRequest,
-                        connection,
-                        new Driver.Callback() {
-                            @Override
-                            public void onTransactionResponse(
-                                    TransactionException transactionException,
-                                    TransactionResponse transactionResponse) {
-                                future2.complete(transactionException);
-                            }
-                        });
+                instantiateRequest,
+                connection,
+                new Driver.Callback() {
+                    @Override
+                    public void onTransactionResponse(
+                            TransactionException transactionException,
+                            TransactionResponse transactionResponse) {
+                        future2.complete(transactionException);
+                    }
+                });
 
         Assert.assertTrue(future2.get(80, TimeUnit.SECONDS).isSuccess());
 

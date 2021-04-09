@@ -2,8 +2,8 @@ package com.webank.wecross.stub.fabric.performance;
 
 import com.webank.wecross.stub.fabric.EndorsementPolicyAnalyzer;
 import com.webank.wecross.stub.fabric.FabricConnection;
-import com.webank.wecross.utils.FabricUtils;
 import com.webank.wecross.stub.fabric.FabricStubFactory;
+import com.webank.wecross.utils.FabricUtils;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Collection;

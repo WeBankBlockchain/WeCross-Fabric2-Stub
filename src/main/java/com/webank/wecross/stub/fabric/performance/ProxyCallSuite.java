@@ -6,7 +6,6 @@ import com.webank.wecross.stub.fabric.FabricConnection;
 import com.webank.wecross.stub.fabric.FabricStubFactory;
 import com.webank.wecross.stub.fabric.proxy.ProxyChaincodeResource;
 import java.util.Collection;
-
 import org.hyperledger.fabric.sdk.ChaincodeID;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.HFClient;

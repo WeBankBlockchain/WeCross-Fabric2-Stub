@@ -12,11 +12,7 @@ import org.hyperledger.fabric.sdk.transaction.TransactionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * @Description: fabric内部方法，通过反射获取方法对象
- * @Author: mirsu
- * @Date: 2020/10/30 16:37
- **/
+/** @Description: fabric内部方法，通过反射获取方法对象 @Author: mirsu @Date: 2020/10/30 16:37 */
 public class FabricInnerFunction {
     private Logger logger = LoggerFactory.getLogger(FabricInnerFunction.class);
 
@@ -65,12 +61,12 @@ public class FabricInnerFunction {
     }
 
     /**
-     * @Description: 向peer 发送交易提案  反射调用
+     * @Description: 向peer 发送交易提案 反射调用
+     *
      * @params: [peers, signedProposal, transactionContext]
-     * @return: java.util.Collection<org.hyperledger.fabric.sdk.ProposalResponse>
-     * @Author: mirsu
-     * @Date: 2020/10/30 16:06
-     **/
+     * @return: java.util.Collection<org.hyperledger.fabric.sdk.ProposalResponse> @Author:
+     *     mirsu @Date: 2020/10/30 16:06
+     */
     public Collection<ProposalResponse> sendProposalToPeers(
             Collection<Peer> peers,
             ProposalPackage.SignedProposal signedProposal,
