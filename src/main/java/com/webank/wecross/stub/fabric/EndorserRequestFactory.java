@@ -45,84 +45,6 @@ public class EndorserRequestFactory {
         return signedProposalBytes;
     }
 
-    public static Request buildPackageProposalRequest(
-            TransactionContext<PackageChaincodeRequest> request) throws Exception {
-        checkAccout(request.getAccount());
-
-        FabricAccount account = (FabricAccount) request.getAccount(); // Account
-        PackageChaincodeRequest packageChaincodeRequest = request.getData();
-
-        // generate proposal
-        ProposalPackage.Proposal proposal = buildPackageProposal(account, packageChaincodeRequest);
-        byte[] signedProposalBytes = signProposal(account, proposal);
-
-        TransactionParams transactionParams =
-                new TransactionParams(new TransactionRequest(), signedProposalBytes, false);
-        //        transactionParams.setOrgNames(new String[]{request.getData().getOrgName()}); //
-        // only 1 in each install request
-
-        Request endorserRequest = new Request();
-        endorserRequest.setData(transactionParams.toBytes());
-        return endorserRequest;
-    }
-
-    private static ProposalPackage.Proposal buildPackageProposal(
-            FabricAccount account, PackageChaincodeRequest request) throws Exception {
-        request.check(); // check has all params
-
-        HFClient hfClient = HFClient.createNewInstance();
-        // 证书套件
-        hfClient.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
-        // 用户信息
-        hfClient.setUserContext(account.getUser());
-        // 通道
-        //        Channel channel =
-        //                hfClient.newChannel(request.getChannelName()); // ChannelName
-
-        //        org.hyperledger.fabric.sdk.transaction.TransactionContext transactionContext =
-        //                new org.hyperledger.fabric.sdk.transaction.TransactionContext(
-        //                        channel, account.getUser(), CryptoSuite.Factory.getCryptoSuite());
-
-        //        ChaincodeID chaincodeID =
-        //                ChaincodeID.newBuilder()
-        //                        .setName(installChaincodeRequest.getName())
-        //                        .setVersion(installChaincodeRequest.getVersion())
-        //                        .setPath("chaincode")
-        //                        .build(); // path default with generateTarGzInputStreamBytes
-        // function
-        //
-        //        transactionContext.verify(
-        //                false); // Install will have no signing cause it's not really targeted to
-        // a channel.
-        // transactionContext.setProposalWaitTime(
-        // FabricStubConfigParser.DEFAULT_DEPLOY_WAIT_TIME); // wait time
-        LifecycleApproveChaincodeDefinitionForMyOrgProposalBuilder approveBuilder =
-                LifecycleApproveChaincodeDefinitionForMyOrgProposalBuilder.newBuilder();
-        approveBuilder.chaincodeName(request.getChaincodeName());
-        //        InstallProposalBuilder installProposalbuilder =
-        // InstallProposalBuilder.newBuilder();
-        //        installProposalbuilder.context(transactionContext);
-        //        installProposalbuilder.setChaincodeLanguage(
-        //                installChaincodeRequest.getChaincodeLanguageType()); // chaincode language
-        //        installProposalbuilder.chaincodeName(chaincodeID.getName()); // name
-        //
-        //        if (installChaincodeRequest
-        //                .getChaincodeLanguageType()
-        //                .equals(org.hyperledger.fabric.sdk.TransactionRequest.Type.GO_LANG)) {
-        //            installProposalbuilder.chaincodePath(chaincodeID.getPath()); // path
-        //        }
-        //
-        //        installProposalbuilder.chaincodeVersion(chaincodeID.getVersion()); // version
-        //        //
-        // installProposalbuilder.setChaincodeSource(installProposalRequest.getChaincodeSourceLocation());
-        //        installProposalbuilder.setChaincodeInputStream(
-        //                new ByteArrayInputStream(installChaincodeRequest.getCode()));
-        //        //
-        // installProposalbuilder.setChaincodeMetaInfLocation(installProposalRequest.getChaincodeMetaInfLocation());
-        ProposalPackage.Proposal build = approveBuilder.build();
-        return build;
-    }
-
     public static Request buildInstallProposalRequest(
             TransactionContext<InstallChaincodeRequest> request) throws Exception {
         checkAccout(request.getAccount());
@@ -523,5 +445,83 @@ public class EndorserRequestFactory {
         if (!account.getType().equals(FabricType.Account.FABRIC_ACCOUNT)) {
             throw new Exception("Illegal account type for fabric call: " + account.getType());
         }
+    }
+
+    public static Request buildPackageProposalRequest(
+            TransactionContext<PackageChaincodeRequest> request) throws Exception {
+        checkAccout(request.getAccount());
+
+        FabricAccount account = (FabricAccount) request.getAccount(); // Account
+        PackageChaincodeRequest packageChaincodeRequest = request.getData();
+
+        // generate proposal
+        ProposalPackage.Proposal proposal = buildPackageProposal(account, packageChaincodeRequest);
+        byte[] signedProposalBytes = signProposal(account, proposal);
+
+        TransactionParams transactionParams =
+                new TransactionParams(new TransactionRequest(), signedProposalBytes, false);
+        //        transactionParams.setOrgNames(new String[]{request.getData().getOrgName()}); //
+        // only 1 in each install request
+
+        Request endorserRequest = new Request();
+        endorserRequest.setData(transactionParams.toBytes());
+        return endorserRequest;
+    }
+
+    private static ProposalPackage.Proposal buildPackageProposal(
+            FabricAccount account, PackageChaincodeRequest request) throws Exception {
+        request.check(); // check has all params
+
+        HFClient hfClient = HFClient.createNewInstance();
+        // 证书套件
+        hfClient.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
+        // 用户信息
+        hfClient.setUserContext(account.getUser());
+        // 通道
+        //        Channel channel =
+        //                hfClient.newChannel(request.getChannelName()); // ChannelName
+
+        //        org.hyperledger.fabric.sdk.transaction.TransactionContext transactionContext =
+        //                new org.hyperledger.fabric.sdk.transaction.TransactionContext(
+        //                        channel, account.getUser(), CryptoSuite.Factory.getCryptoSuite());
+
+        //        ChaincodeID chaincodeID =
+        //                ChaincodeID.newBuilder()
+        //                        .setName(installChaincodeRequest.getName())
+        //                        .setVersion(installChaincodeRequest.getVersion())
+        //                        .setPath("chaincode")
+        //                        .build(); // path default with generateTarGzInputStreamBytes
+        // function
+        //
+        //        transactionContext.verify(
+        //                false); // Install will have no signing cause it's not really targeted to
+        // a channel.
+        // transactionContext.setProposalWaitTime(
+        // FabricStubConfigParser.DEFAULT_DEPLOY_WAIT_TIME); // wait time
+        LifecycleApproveChaincodeDefinitionForMyOrgProposalBuilder approveBuilder =
+                LifecycleApproveChaincodeDefinitionForMyOrgProposalBuilder.newBuilder();
+        approveBuilder.chaincodeName(request.getChaincodeName());
+        //        InstallProposalBuilder installProposalbuilder =
+        // InstallProposalBuilder.newBuilder();
+        //        installProposalbuilder.context(transactionContext);
+        //        installProposalbuilder.setChaincodeLanguage(
+        //                installChaincodeRequest.getChaincodeLanguageType()); // chaincode language
+        //        installProposalbuilder.chaincodeName(chaincodeID.getName()); // name
+        //
+        //        if (installChaincodeRequest
+        //                .getChaincodeLanguageType()
+        //                .equals(org.hyperledger.fabric.sdk.TransactionRequest.Type.GO_LANG)) {
+        //            installProposalbuilder.chaincodePath(chaincodeID.getPath()); // path
+        //        }
+        //
+        //        installProposalbuilder.chaincodeVersion(chaincodeID.getVersion()); // version
+        //        //
+        // installProposalbuilder.setChaincodeSource(installProposalRequest.getChaincodeSourceLocation());
+        //        installProposalbuilder.setChaincodeInputStream(
+        //                new ByteArrayInputStream(installChaincodeRequest.getCode()));
+        //        //
+        // installProposalbuilder.setChaincodeMetaInfLocation(installProposalRequest.getChaincodeMetaInfLocation());
+        ProposalPackage.Proposal build = approveBuilder.build();
+        return build;
     }
 }

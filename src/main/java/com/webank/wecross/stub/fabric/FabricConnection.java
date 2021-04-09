@@ -353,10 +353,7 @@ public class FabricConnection implements Connection {
                     orgPeers.add(peer);
                 }
             }
-            // TODO: 2020/10/30
-            System.out.println("orgSet:" + orgSet.toString());
-            System.out.println("peerOrgSet:" + peerOrgSet.toString());
-            System.out.println("orgPeers:" + orgPeers.toString());
+
             checkNonExistOrgSet(orgSet, peerOrgSet);
 
             Collection<ProposalResponse> proposalResponses = queryEndorser(request, orgPeers);
@@ -413,46 +410,6 @@ public class FabricConnection implements Connection {
 
             Collection<ProposalResponse> proposalResponses =
                     queryEndorser(transactionParams.getData(), endorsers);
-            EndorsementPolicyAnalyzer analyzer = new EndorsementPolicyAnalyzer(proposalResponses);
-
-            if (analyzer.hasSuccess()) {
-                response =
-                        FabricConnectionResponse.build()
-                                .errorCode(FabricType.TransactionResponseStatus.SUCCESS)
-                                .errorMessage(analyzer.info())
-                                .data(analyzer.getPayload());
-            } else {
-                response =
-                        FabricConnectionResponse.build()
-                                .errorCode(
-                                        FabricType.TransactionResponseStatus
-                                                .FABRIC_INVOKE_CHAINCODE_FAILED)
-                                .errorMessage("Query endorser failed: " + analyzer.info());
-            }
-        } catch (Exception e) {
-            response =
-                    FabricConnectionResponse.build()
-                            .errorCode(
-                                    FabricType.TransactionResponseStatus
-                                            .FABRIC_INVOKE_CHAINCODE_FAILED)
-                            .errorMessage("Query endorser exception: " + e);
-        }
-        return response;
-    }
-
-    private Response call2(Request request, Collection<Peer> endorsers) {
-        if (request.getType() != FabricType.ConnectionMessage.FABRIC2_CALL) {
-            return FabricConnectionResponse.build()
-                    .errorCode(FabricType.TransactionResponseStatus.ILLEGAL_REQUEST_TYPE)
-                    .errorMessage("Illegal request type: " + request.getType());
-        }
-
-        FabricConnectionResponse response;
-        try {
-            TransactionParams transactionParams = TransactionParams.parseFrom(request.getData());
-
-            Collection<ProposalResponse> proposalResponses =
-                    queryEndorser2(transactionParams, endorsers);
             EndorsementPolicyAnalyzer analyzer = new EndorsementPolicyAnalyzer(proposalResponses);
 
             if (analyzer.hasSuccess()) {
@@ -799,32 +756,6 @@ public class FabricConnection implements Connection {
             throws Exception {
         ProposalPackage.SignedProposal sp = ProposalPackage.SignedProposal.parseFrom(data);
         TransactionContext transactionContext = getTransactionContext(sp);
-
-        Collection<ProposalResponse> endorserResponses =
-                fabricInnerFunction.sendProposalToPeers(endorsers, sp, transactionContext);
-        return endorserResponses;
-    }
-
-    private Collection<ProposalResponse> queryEndorser2(
-            TransactionParams transactionParams, Collection<Peer> endorsers) throws Exception {
-
-        ProposalPackage.SignedProposal sp =
-                ProposalPackage.SignedProposal.parseFrom(transactionParams.getData());
-        TransactionContext transactionContext = getTransactionContext(sp);
-
-        User user = transactionContext.getUser();
-        String[] args = transactionParams.getOriginTransactionRequest().getArgs();
-
-        String method = transactionParams.getOriginTransactionRequest().getMethod();
-
-        QueryByChaincodeRequest queryByChaincodeRequest = hfClient.newQueryProposalRequest();
-        queryByChaincodeRequest.setArgs(args);
-        queryByChaincodeRequest.setFcn(method);
-        //        queryByChaincodeRequest.setChaincodeName(chaincodeName);
-        //        queryByChaincodeRequest.setChaincodeVersion(chaincodeVersion);
-        queryByChaincodeRequest.setUserContext(user);
-        Collection<ProposalResponse> queryProposals =
-                channel.queryByChaincode(queryByChaincodeRequest);
 
         Collection<ProposalResponse> endorserResponses =
                 fabricInnerFunction.sendProposalToPeers(endorsers, sp, transactionContext);

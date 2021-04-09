@@ -59,7 +59,7 @@ WeCross Fabric2 Stub是[WeCross](https://github.com/WeBankBlockchain/WeCross)用
     keystore = 'account.key'
     signcert = 'account.crt'
 	```
-		
+	
 2. 配置接入Fabric链
 
 		 cd WeCross/routers-payment/127.0.0.1-8250-25501/
@@ -152,8 +152,8 @@ WeCross Fabric2 Stub是[WeCross](https://github.com/WeBankBlockchain/WeCross)用
 **编译命令**:
 
 ```shell
-git clone https://github.com/WeBankBlockchain/WeCross-Fabric1-Stub.git
-cd WeCross-Fabric1-Stub
+git clone https://github.com/WeBankBlockchain/WeCross-Fabric2-Stub.git
+cd WeCross-Fabric2-Stub
 ./gradlew assemble
 ```
 
