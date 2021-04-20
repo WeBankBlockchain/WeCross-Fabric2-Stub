@@ -99,6 +99,10 @@ public class FabricBlock {
         return validList;
     }
 
+    public Header getHeader() {
+        return header;
+    }
+
     public static class Header {
         private Common.BlockHeader header;
 
@@ -196,5 +200,9 @@ public class FabricBlock {
     @Override
     public String toString() {
         return block.toString();
+    }
+
+    public boolean verify(String blockVerifierString) {
+        return true;
     }
 }

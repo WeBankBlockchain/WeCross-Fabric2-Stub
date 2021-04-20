@@ -11,6 +11,7 @@ import com.webank.wecross.stub.Connection;
 import com.webank.wecross.stub.Request;
 import com.webank.wecross.stub.ResourceInfo;
 import com.webank.wecross.stub.Response;
+import com.webank.wecross.stub.StubConstant;
 import com.webank.wecross.stub.fabric.FabricCustomCommand.InstantiateChaincodeRequest;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
@@ -45,7 +46,8 @@ public class FabricConnection implements Connection {
     private Timer timeoutHandler;
     private long latestBlockNumber = 0;
     private ThreadPoolTaskExecutor threadPool;
-    private String blockListenerHandler = new String();
+    private String blockListenerHandler;
+    private Map<String, String> properties = new HashMap<>();
 
     public FabricConnection(
             HFClient hfClient,
@@ -65,6 +67,8 @@ public class FabricConnection implements Connection {
         this.timeoutHandler = new HashedWheelTimer();
 
         this.threadPool = threadPool;
+
+        this.properties = Properties.builder().channelName(this.channel.getName()).toMap();
     }
 
     // 链接初始化
@@ -85,8 +89,7 @@ public class FabricConnection implements Connection {
         chaincodeResourceManager.start();
     }
 
-    @Override
-    public Response send(Request request) {
+    private Response send(Request request) {
         switch (request.getType()) {
             case FabricType.ConnectionMessage.FABRIC_CALL:
                 return handleCall(request);
@@ -100,8 +103,8 @@ public class FabricConnection implements Connection {
             case FabricType.ConnectionMessage.FABRIC_GET_BLOCK_NUMBER:
                 return handleGetBlockNumber(request);
 
-            case FabricType.ConnectionMessage.FABRIC_GET_BLOCK_HEADER:
-                return handleGetBlockHeader(request);
+            case FabricType.ConnectionMessage.FABRIC_GET_BLOCK:
+                return handleGetBlock(request);
 
             case FabricType.ConnectionMessage.FABRIC_GET_TRANSACTION:
                 return handleGetTransaction(request);
@@ -139,13 +142,13 @@ public class FabricConnection implements Connection {
         }
     }
 
-    @Override
     public List<ResourceInfo> getResources() {
         return chaincodeResourceManager.getResourceInfoList(false);
     }
 
     public static class Properties {
         private String channelName;
+        private String blockVerifierString;
 
         Properties() {}
 
@@ -175,7 +178,7 @@ public class FabricConnection implements Connection {
 
     @Override
     public Map<String, String> getProperties() {
-        return Properties.builder().channelName(this.channel.getName()).toMap();
+        return this.properties;
     }
 
     @Override
@@ -268,7 +271,7 @@ public class FabricConnection implements Connection {
                 .data(numberBytes);
     }
 
-    private Response handleGetBlockHeader(Request request) {
+    private Response handleGetBlock(Request request) {
 
         Response response;
         try {
@@ -579,9 +582,9 @@ public class FabricConnection implements Connection {
             Collections.shuffle(shuffeledOrderers);
 
             logger.debug(
-                    format(
-                            "Channel %s sending transaction to orderer(s) with TxID %s ",
-                            name, proposalTransactionID));
+                    "Channel {} sending transaction to orderer(s) with TxID {} ",
+                    name,
+                    proposalTransactionID);
             boolean success = false;
             Exception lException =
                     null; // Save last exception to report to user .. others are just logged.
@@ -594,8 +597,7 @@ public class FabricConnection implements Connection {
 
             for (Orderer orderer : shuffeledOrderers) {
                 if (failed != null) {
-                    logger.warn(
-                            format("Channel %s  %s failed. Now trying %s.", name, failed, orderer));
+                    logger.warn("Channel {}  {} failed. Now trying {}.", name, failed, orderer);
                 }
                 failed = orderer;
                 try {
@@ -697,9 +699,9 @@ public class FabricConnection implements Connection {
             if (replyonly) { // If there are no eventhubs to complete the future, complete it
                 // immediately but give no transaction event
                 logger.debug(
-                        format(
-                                "Completing transaction id %s immediately no event hubs or peer eventing services found in channel %s.",
-                                proposalTransactionID, name));
+                        "Completing transaction id {} immediately no event hubs or peer eventing services found in channel {}.",
+                        proposalTransactionID,
+                        name);
                 sret = new CompletableFuture<>();
             } else {
                 sret =
@@ -953,12 +955,33 @@ public class FabricConnection implements Connection {
         return resourceOrgNames;
     }
 
+    public Set<String> getHubOrgNames(boolean updateBeforeGet) throws Exception {
+        if (updateBeforeGet) {
+            updateChaincodeMap();
+        }
+
+        Set<String> resourceOrgNames = new HashSet<>();
+        List<ResourceInfo> resourceInfos = chaincodeResourceManager.getResourceInfoList(false);
+        for (ResourceInfo resourceInfo : resourceInfos) {
+
+            if (!resourceInfo.getName().equals(StubConstant.HUB_NAME)) {
+                continue; // Ignore other chaincode info
+            }
+
+            ArrayList<String> orgNames =
+                    ResourceInfoProperty.parseFrom(resourceInfo.getProperties()).getOrgNames();
+            for (String orgName : orgNames) {
+                resourceOrgNames.add(orgName);
+            }
+        }
+        return resourceOrgNames;
+    }
+
     public boolean hasProxyDeployed2AllPeers() throws Exception {
         Set<String> peerOrgNames = getAllPeerOrgNames();
         Set<String> resourceOrgNames = getProxyOrgNames(true);
 
-        logger.info("peerOrgNames: " + peerOrgNames.toString());
-        logger.info("resourceOrgNames: " + resourceOrgNames.toString());
+        logger.info("peerOrgNames: {}, resourceOrgNames: {}", peerOrgNames, resourceOrgNames);
 
         peerOrgNames.removeAll(resourceOrgNames);
         if (!peerOrgNames.isEmpty()) {

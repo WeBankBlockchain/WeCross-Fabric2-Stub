@@ -2,8 +2,9 @@ package com.webank.wecross.stub.fabric;
 
 import com.webank.wecross.account.FabricAccountFactory;
 import com.webank.wecross.common.FabricType;
+import com.webank.wecross.stub.StubConstant;
 import java.io.File;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 import org.hyperledger.fabric.sdk.Channel;
@@ -38,11 +39,7 @@ public class FabricConnectionFactory {
             ThreadPoolTaskExecutor threadPool = buildThreadPool(configFile);
 
             return new FabricConnection(
-                    hfClient,
-                    channel,
-                    peersMap,
-                    configFile.getAdvanced().getProxyChaincode(),
-                    threadPool);
+                    hfClient, channel, peersMap, StubConstant.PROXY_NAME, threadPool);
 
         } catch (Exception e) {
             Logger logger = LoggerFactory.getLogger(FabricConnectionFactory.class);
@@ -51,7 +48,7 @@ public class FabricConnectionFactory {
         }
     }
 
-    public static ThreadPoolTaskExecutor buildThreadPool(FabricStubConfigParser configFile) {
+    private static ThreadPoolTaskExecutor buildThreadPool(FabricStubConfigParser configFile) {
         ThreadPoolTaskExecutor threadPool = new ThreadPoolTaskExecutor();
         int corePoolSize = configFile.getAdvanced().getThreadPool().getCorePoolSize();
         int maxPoolSize = configFile.getAdvanced().getThreadPool().getMaxPoolSize();
@@ -59,6 +56,7 @@ public class FabricConnectionFactory {
         threadPool.setCorePoolSize(corePoolSize);
         threadPool.setMaxPoolSize(maxPoolSize);
         threadPool.setQueueCapacity(queueCapacity);
+        threadPool.setThreadNamePrefix("FabricConnection-");
         logger.info(
                 "Init threadPool with corePoolSize:{}, maxPoolSize:{}, queueCapacity:{}",
                 corePoolSize,
@@ -82,7 +80,7 @@ public class FabricConnectionFactory {
 
     public static Map<String, Peer> buildPeersMap(
             HFClient client, FabricStubConfigParser fabricStubConfigParser) throws Exception {
-        Map<String, Peer> peersMap = new HashMap<>();
+        Map<String, Peer> peersMap = new LinkedHashMap<>();
         int index = 0;
         Map<String, FabricStubConfigParser.Orgs.Org> orgs = fabricStubConfigParser.getOrgs();
 
@@ -126,7 +124,8 @@ public class FabricConnectionFactory {
         Properties orderer1Prop = new Properties();
         orderer1Prop.setProperty(
                 "pemFile", fabricStubConfigParser.getFabricServices().getOrdererTlsCaFile());
-        orderer1Prop.setProperty("sslProvider", "openSSL");
+        // orderer1Prop.setProperty("sslProvider", "openSSL");
+        orderer1Prop.setProperty("sslProvider", "JDK");
         orderer1Prop.setProperty("negotiationType", "TLS");
         orderer1Prop.setProperty("ordererWaitTimeMilliSecs", "300000");
         orderer1Prop.setProperty("hostnameOverride", "orderer");
@@ -145,7 +144,8 @@ public class FabricConnectionFactory {
             throws InvalidArgumentException {
         Properties peer0Prop = new Properties();
         peer0Prop.setProperty("pemFile", tlsCaFile);
-        peer0Prop.setProperty("sslProvider", "openSSL");
+        // peer0Prop.setProperty("sslProvider", "openSSL");
+        peer0Prop.setProperty("sslProvider", "JDK");
         peer0Prop.setProperty("negotiationType", "TLS");
         peer0Prop.setProperty("hostnameOverride", "peer0");
         peer0Prop.setProperty("trustServerCertificate", "true");

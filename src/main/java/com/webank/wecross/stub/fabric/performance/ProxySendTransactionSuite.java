@@ -1,10 +1,10 @@
 package com.webank.wecross.stub.fabric.performance;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.webank.wecross.stub.StubConstant;
 import com.webank.wecross.stub.fabric.EndorsementPolicyAnalyzer;
 import com.webank.wecross.stub.fabric.FabricConnection;
 import com.webank.wecross.stub.fabric.FabricStubFactory;
-import com.webank.wecross.stub.fabric.proxy.ProxyChaincodeResource;
 import com.webank.wecross.utils.FabricUtils;
 import java.security.SecureRandom;
 import java.util.Arrays;
@@ -20,7 +20,7 @@ import org.hyperledger.fabric.sdk.TransactionProposalRequest;
 
 /** @Description: 代理合约交易套件 @Author: mirsu @Date: 2020/10/30 10:27 */
 public class ProxySendTransactionSuite implements PerformanceSuite {
-    private final String proxyName = ProxyChaincodeResource.DEFAULT_NAME;
+    private final String proxyName = StubConstant.PROXY_NAME;
     static final int BOUND = Integer.MAX_VALUE - 1;
 
     private static ObjectMapper objectMapper = new ObjectMapper();
@@ -41,13 +41,13 @@ public class ProxySendTransactionSuite implements PerformanceSuite {
             throw new Exception("WeCross proxy chaincode has not been deployed");
         }
 
-        if (!fabricConnection.getChaincodeMap().containsKey("sacc")) {
+        if (!fabricConnection.getChaincodeMap().containsKey("chaincode/sacc")) {
             throw new Exception("Resource sacc has not been deployed");
         }
 
         this.hfClient = fabricConnection.getHfClient();
 
-        this.endorsers = fabricConnection.getChaincodeMap().get("sacc").getEndorsers();
+        this.endorsers = fabricConnection.getChaincodeMap().get("chaincode/sacc").getEndorsers();
 
         sendTransactionOnceByProxy(null);
     }

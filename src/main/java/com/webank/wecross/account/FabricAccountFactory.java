@@ -32,6 +32,15 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
 
 public class FabricAccountFactory {
+    private static Logger logger = LoggerFactory.getLogger(FabricAccountFactory.class);
+
+    public static FabricAccount build(Map<String, Object> properties) {
+        return null;
+    }
+
+    public static FabricAccount build(String name, String mspID, String pubKey, String secKey) {
+        return null;
+    }
 
     public static FabricAccount build(String name, String accountPath) {
         try {

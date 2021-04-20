@@ -2,6 +2,7 @@ package com.webank.wecross.common;
 
 public class FabricType {
     public static final String STUB_NAME = "Fabric2.0";
+    public static final String FABRIC_VERIFIER = "VERIFIER";
 
     public static final class Account {
         public static final String FABRIC_ACCOUNT = STUB_NAME;
@@ -10,14 +11,12 @@ public class FabricType {
     public static final class ConnectionMessage {
         // Connection send message type
         public static final int FABRIC_CALL = 2001;
-        public static final int FABRIC2_CALL = 22001;
         public static final int FABRIC_SENDTRANSACTION_ENDORSER = 2002;
         public static final int FABRIC_SENDTRANSACTION_ORDERER = 2003;
         public static final int FABRIC_GET_BLOCK_NUMBER = 2004;
-        public static final int FABRIC_GET_BLOCK_HEADER = 2005;
+        public static final int FABRIC_GET_BLOCK = 2005;
         public static final int FABRIC_GET_TRANSACTION = 2006;
         public static final int FABRIC_SENDTRANSACTION_ORG_ENDORSER = 2007;
-        public static final int FABRIC_CHAINCODE_PACKAGE = 2008;
     }
 
     public static class Resource {

@@ -2,22 +2,18 @@ package com.webank.wecross.stub.fabric.proxy;
 
 import com.webank.wecross.account.FabricAccount;
 import com.webank.wecross.common.FabricType;
-import com.webank.wecross.stub.Account;
-import com.webank.wecross.stub.BlockHeaderManager;
+import com.webank.wecross.stub.Block;
+import com.webank.wecross.stub.BlockManager;
 import com.webank.wecross.stub.Connection;
 import com.webank.wecross.stub.Driver;
-import com.webank.wecross.stub.TransactionContext;
-import com.webank.wecross.stub.TransactionException;
+import com.webank.wecross.stub.StubConstant;
 import com.webank.wecross.stub.fabric.FabricConnection;
 import com.webank.wecross.stub.fabric.FabricConnectionFactory;
-import com.webank.wecross.stub.fabric.FabricCustomCommand.InstallChaincodeRequest;
 import com.webank.wecross.stub.fabric.FabricCustomCommand.PackageChaincodeRequest;
-import com.webank.wecross.stub.fabric.FabricCustomCommand.UpgradeChaincodeRequest;
-import com.webank.wecross.stub.fabric.FabricDriver;
 import com.webank.wecross.stub.fabric.FabricStubConfigParser;
 import com.webank.wecross.stub.fabric.FabricStubFactory;
+import com.webank.wecross.stub.fabric.SystemChaincodeUtility;
 import com.webank.wecross.stub.fabric.chaincode.ChaincodeHandler;
-import com.webank.wecross.utils.TarUtils;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.*;
@@ -132,7 +128,7 @@ public class ProxyChaincodeDeployment {
             //            Account admin = fabricStubFactory.newAccount( adminName,
             // "classpath:accounts" + File.separator + adminName);
             // 获取代理合约名称
-            String chaincodeName = configFile.getAdvanced().getProxyChaincode();
+            String chaincodeName = StubConstant.PROXY_NAME;
 
             // 通道名称
             String channelName = configFile.getFabricServices().getChannelName();
@@ -349,56 +345,6 @@ public class ProxyChaincodeDeployment {
         return lifecycleChaincodePackage;
     }
 
-    /**
-     * @Description: 安装 go合约
-     *
-     * @params: [orgName, connection, driver, user, blockHeaderManager, chaincodeName, code,
-     *     version]
-     * @return: void @Author: mirsu @Date: 2020/10/30 11:32
-     */
-    @Deprecated
-    public static void install(
-            String orgName,
-            FabricConnection connection,
-            Driver driver,
-            Account user,
-            BlockHeaderManager blockHeaderManager,
-            String chaincodeName,
-            byte[] code,
-            String version)
-            throws Exception {
-        System.out.println("Install " + chaincodeName + ":" + version + " to " + orgName + " ...");
-
-        String channelName = connection.getChannel().getName();
-        String language = "GO_LANG";
-
-        InstallChaincodeRequest installChaincodeRequest =
-                InstallChaincodeRequest.build()
-                        .setName(chaincodeName)
-                        .setVersion(version)
-                        .setOrgName(orgName)
-                        .setChannelName(channelName)
-                        .setChaincodeLanguage(language)
-                        .setCode(code);
-
-        TransactionContext<InstallChaincodeRequest> installRequest =
-                new TransactionContext<InstallChaincodeRequest>(
-                        installChaincodeRequest, user, null, null, blockHeaderManager);
-
-        CompletableFuture<TransactionException> future1 = new CompletableFuture<>();
-        ((FabricDriver) driver)
-                .asyncInstallChaincode(
-                        installRequest,
-                        connection,
-                        (transactionException, transactionResponse) ->
-                                future1.complete(transactionException));
-
-        TransactionException e1 = future1.get(80, TimeUnit.SECONDS);
-        if (!e1.isSuccess()) {
-            System.out.println("WARNING: asyncCustomCommand install: " + e1.getMessage());
-        }
-    }
-
     private static void approveForMyOrg(
             FabricAccount account,
             Channel channel,
@@ -482,101 +428,11 @@ public class ProxyChaincodeDeployment {
 
     public static void upgrade(String chainPath) throws Exception {
         String stubPath = "classpath:" + File.separator + chainPath;
-
-        FabricStubConfigParser configFile = new FabricStubConfigParser(stubPath);
-        String version = String.valueOf(System.currentTimeMillis() / 1000);
         FabricConnection connection = FabricConnectionFactory.build(stubPath);
         connection.start();
 
-        FabricStubFactory fabricStubFactory = new FabricStubFactory();
-        Driver driver = fabricStubFactory.newDriver();
-        BlockHeaderManager blockHeaderManager = new DirectBlockHeaderManager(driver, connection);
-        List<String> orgNames = new LinkedList<>();
-        String adminName = configFile.getFabricServices().getOrgUserName();
-        Account admin =
-                fabricStubFactory.newAccount(
-                        adminName, "classpath:accounts" + File.separator + adminName);
-        String chaincodeName = configFile.getAdvanced().getProxyChaincode();
-
-        for (Map.Entry<String, FabricStubConfigParser.Orgs.Org> orgEntry :
-                configFile.getOrgs().entrySet()) {
-            String orgName = orgEntry.getKey();
-            orgNames.add(orgName);
-            String accountName = orgEntry.getValue().getAdminName();
-
-            Account orgAdmin =
-                    fabricStubFactory.newAccount(
-                            accountName, "classpath:accounts" + File.separator + accountName);
-
-            String chaincodeFilesDir =
-                    "classpath:" + chainPath + File.separator + chaincodeName + File.separator;
-            byte[] code =
-                    TarUtils.generateTarGzInputStreamBytesFoGoChaincode(
-                            chaincodeFilesDir); // Proxy is go
-            install(
-                    orgName,
-                    connection,
-                    driver,
-                    orgAdmin,
-                    blockHeaderManager,
-                    chaincodeName,
-                    code,
-                    version);
-        }
-        upgrade(orgNames, connection, driver, admin, blockHeaderManager, chaincodeName, version);
-        System.out.println("SUCCESS: " + chaincodeName + " has been upgraded to " + chainPath);
-    }
-
-    /**
-     * @Description: 升级合约
-     *
-     * @params: [orgNames, connection, driver, user, blockHeaderManager, chaincodeName, version]
-     * @return: void @Author: mirsu @Date: 2020/10/30 17:22
-     */
-    public static void upgrade(
-            List<String> orgNames,
-            FabricConnection connection,
-            Driver driver,
-            Account user,
-            BlockHeaderManager blockHeaderManager,
-            String chaincodeName,
-            String version)
-            throws Exception {
-        System.out.println(
-                "Upgrade " + chaincodeName + ":" + version + " to " + orgNames.toString() + " ...");
-        String channelName = connection.getChannel().getName();
-        String language = "GO_LANG";
-
-        String[] args = new String[] {channelName};
-
-        UpgradeChaincodeRequest upgradeChaincodeRequest =
-                UpgradeChaincodeRequest.build()
-                        .setName(chaincodeName)
-                        .setVersion(version)
-                        .setOrgNames(orgNames.toArray(new String[] {}))
-                        .setChannelName(channelName)
-                        .setChaincodeLanguage(language)
-                        .setEndorsementPolicy("") // "OR ('Org1MSP.peer','Org2MSP.peer')"
-                        // .setTransientMap()
-                        .setArgs(args);
-        TransactionContext<UpgradeChaincodeRequest> instantiateRequest =
-                new TransactionContext<UpgradeChaincodeRequest>(
-                        upgradeChaincodeRequest, user, null, null, blockHeaderManager);
-
-        CompletableFuture<TransactionException> future2 = new CompletableFuture<>();
-        ((FabricDriver) driver)
-                .asyncUpgradeChaincode(
-                        instantiateRequest,
-                        connection,
-                        (transactionException, transactionResponse) ->
-                                future2.complete(transactionException));
-
-        //        TransactionException e2 = future2.get(50, TimeUnit.SECONDS);
-        TransactionException e2 = future2.get();
-        if (!e2.isSuccess()) {
-            e2.printStackTrace();
-            throw new Exception("ERROR: asyncCustomCommand upgrade error: " + e2.getMessage());
-        }
+        String[] args = new String[] {connection.getChannel().getName()};
+        SystemChaincodeUtility.upgrade(chainPath, StubConstant.PROXY_NAME, args);
     }
 
     public static boolean hasInstantiate(String chainPath) throws Exception {
@@ -636,7 +492,7 @@ public class ProxyChaincodeDeployment {
         }
     }
     /** @Description: driver 与 connection 的组合类 @Author: mirsu @Date: 2020/10/30 11:20 */
-    public static class DirectBlockHeaderManager implements BlockHeaderManager {
+    public static class DirectBlockHeaderManager implements BlockManager {
         private Driver driver;
         private Connection connection;
 
@@ -664,14 +520,15 @@ public class ProxyChaincodeDeployment {
         }
 
         @Override
-        public void asyncGetBlockHeader(long blockNumber, GetBlockHeaderCallback callback) {
-            driver.asyncGetBlockHeader(
+        public void asyncGetBlock(long blockNumber, GetBlockCallback callback) {
+            driver.asyncGetBlock(
                     blockNumber,
+                    false,
                     connection,
-                    new Driver.GetBlockHeaderCallback() {
+                    new Driver.GetBlockCallback() {
                         @Override
-                        public void onResponse(Exception e, byte[] blockHeader) {
-                            callback.onResponse(e, blockHeader);
+                        public void onResponse(Exception e, Block block) {
+                            callback.onResponse(e, block);
                         }
                     });
         }

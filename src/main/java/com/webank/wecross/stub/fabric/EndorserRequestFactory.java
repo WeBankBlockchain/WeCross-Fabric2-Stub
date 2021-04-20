@@ -29,13 +29,17 @@ import org.hyperledger.fabric.sdk.transaction.*;
 
 public class EndorserRequestFactory {
 
-    public static byte[] buildProposalRequestBytes(TransactionContext<TransactionRequest> request)
+    public static byte[] buildProposalRequestBytes(
+            TransactionContext transactionContext, TransactionRequest transactionRequest)
             throws Exception {
-        checkAccout(request.getAccount());
+        if (!transactionContext.getAccount().getType().equals(FabricType.Account.FABRIC_ACCOUNT)) {
+            throw new Exception(
+                    "Illegal account type for fabric call: "
+                            + transactionContext.getAccount().getType());
+        }
 
-        FabricAccount account = (FabricAccount) request.getAccount();
-        ResourceInfo resourceInfo = request.getResourceInfo();
-        TransactionRequest transactionRequest = request.getData();
+        FabricAccount account = (FabricAccount) transactionContext.getAccount();
+        ResourceInfo resourceInfo = transactionContext.getResourceInfo();
 
         // generate proposal
         ProposalPackage.Proposal proposal =
@@ -46,11 +50,15 @@ public class EndorserRequestFactory {
     }
 
     public static Request buildInstallProposalRequest(
-            TransactionContext<InstallChaincodeRequest> request) throws Exception {
-        checkAccout(request.getAccount());
+            TransactionContext transactionContext, InstallChaincodeRequest installChaincodeRequest)
+            throws Exception {
+        if (!transactionContext.getAccount().getType().equals(FabricType.Account.FABRIC_ACCOUNT)) {
+            throw new Exception(
+                    "Illegal account type for fabric call: "
+                            + transactionContext.getAccount().getType());
+        }
 
-        FabricAccount account = (FabricAccount) request.getAccount(); // Account
-        InstallChaincodeRequest installChaincodeRequest = request.getData();
+        FabricAccount account = (FabricAccount) transactionContext.getAccount(); // Account
 
         // generate proposal
         ProposalPackage.Proposal proposal = buildInstallProposal(account, installChaincodeRequest);
@@ -59,7 +67,9 @@ public class EndorserRequestFactory {
         TransactionParams transactionParams =
                 new TransactionParams(new TransactionRequest(), signedProposalBytes, false);
         transactionParams.setOrgNames(
-                new String[] {request.getData().getOrgName()}); // only 1 in each install request
+                new String[] {
+                    installChaincodeRequest.getOrgName()
+                }); // only 1 in each install request
 
         Request endorserRequest = new Request();
         endorserRequest.setData(transactionParams.toBytes());
@@ -67,11 +77,16 @@ public class EndorserRequestFactory {
     }
 
     public static Request buildInstantiateProposalRequest(
-            TransactionContext<InstantiateChaincodeRequest> request) throws Exception {
-        checkAccout(request.getAccount());
+            TransactionContext transactionContext,
+            InstantiateChaincodeRequest instantiateChaincodeRequest)
+            throws Exception {
+        if (!transactionContext.getAccount().getType().equals(FabricType.Account.FABRIC_ACCOUNT)) {
+            throw new Exception(
+                    "Illegal account type for fabric call: "
+                            + transactionContext.getAccount().getType());
+        }
 
-        FabricAccount account = (FabricAccount) request.getAccount(); // Account
-        InstantiateChaincodeRequest instantiateChaincodeRequest = request.getData();
+        FabricAccount account = (FabricAccount) transactionContext.getAccount(); // Account
 
         // generate proposal
 
@@ -81,7 +96,7 @@ public class EndorserRequestFactory {
 
         TransactionParams transactionParams =
                 new TransactionParams(new TransactionRequest(), signedProposalBytes, false);
-        transactionParams.setOrgNames(request.getData().getOrgNames());
+        transactionParams.setOrgNames(instantiateChaincodeRequest.getOrgNames());
 
         Request endorserRequest = new Request();
         endorserRequest.setData(transactionParams.toBytes());
@@ -90,11 +105,15 @@ public class EndorserRequestFactory {
     }
 
     public static Request buildUpgradeProposalRequest(
-            TransactionContext<UpgradeChaincodeRequest> request) throws Exception {
-        checkAccout(request.getAccount());
+            TransactionContext transactionContext, UpgradeChaincodeRequest upgradeChaincodeRequest)
+            throws Exception {
+        if (!transactionContext.getAccount().getType().equals(FabricType.Account.FABRIC_ACCOUNT)) {
+            throw new Exception(
+                    "Illegal account type for fabric call: "
+                            + transactionContext.getAccount().getType());
+        }
 
-        FabricAccount account = (FabricAccount) request.getAccount(); // Account
-        UpgradeChaincodeRequest upgradeChaincodeRequest = request.getData();
+        FabricAccount account = (FabricAccount) transactionContext.getAccount(); // Account
 
         // generate proposal
         ProposalPackage.Proposal proposal = buildUpgradeProposal(account, upgradeChaincodeRequest);
@@ -102,7 +121,7 @@ public class EndorserRequestFactory {
 
         TransactionParams transactionParams =
                 new TransactionParams(new TransactionRequest(), signedProposalBytes, false);
-        transactionParams.setOrgNames(request.getData().getOrgNames());
+        transactionParams.setOrgNames(upgradeChaincodeRequest.getOrgNames());
 
         Request endorserRequest = new Request();
         endorserRequest.setData(transactionParams.toBytes());
@@ -336,12 +355,17 @@ public class EndorserRequestFactory {
         return getParamterList(request.getArgs());
     }
 
-    public static byte[] encode(TransactionContext<TransactionRequest> request) throws Exception {
-        checkAccout(request.getAccount());
+    public static byte[] encode(
+            TransactionContext transactionContext, TransactionRequest transactionRequest)
+            throws Exception {
+        if (!transactionContext.getAccount().getType().equals(FabricType.Account.FABRIC_ACCOUNT)) {
+            throw new Exception(
+                    "Illegal account type for fabric call: "
+                            + transactionContext.getAccount().getType());
+        }
 
-        FabricAccount account = (FabricAccount) request.getAccount();
-        ResourceInfo resourceInfo = request.getResourceInfo();
-        TransactionRequest transactionRequest = request.getData();
+        FabricAccount account = (FabricAccount) transactionContext.getAccount();
+        ResourceInfo resourceInfo = transactionContext.getResourceInfo();
 
         // generate proposal
         ProposalPackage.Proposal proposal =
@@ -349,34 +373,8 @@ public class EndorserRequestFactory {
         return signProposal(account, proposal);
     }
 
-    public static TransactionContext<TransactionRequest> decode(byte[] signedProposalBytes)
-            throws Exception {
-        String identity = getIdentityFromSignedProposal(signedProposalBytes);
-        Account simpleAccount =
-                new Account() {
-                    @Override
-                    public String getName() {
-                        return "Unknown";
-                    }
-
-                    @Override
-                    public String getType() {
-                        return FabricType.Account.FABRIC_ACCOUNT;
-                    }
-
-                    @Override
-                    public String getIdentity() {
-                        return identity;
-                    }
-                };
-
-        TransactionRequest transactionRequest =
-                getTransactionRequestFromSignedProposalBytes(signedProposalBytes);
-
-        TransactionContext<TransactionRequest> transactionContext =
-                new TransactionContext<>(transactionRequest, simpleAccount, null, null, null);
-
-        return transactionContext;
+    public static TransactionRequest decode(byte[] signedProposalBytes) throws Exception {
+        return getTransactionRequestFromSignedProposalBytes(signedProposalBytes);
     }
 
     private static String getIdentityFromSignedProposal(byte[] signedProposalBytes)
@@ -446,28 +444,28 @@ public class EndorserRequestFactory {
             throw new Exception("Illegal account type for fabric call: " + account.getType());
         }
     }
+    /*
+        public static Request buildPackageProposalRequest(
+                TransactionContext<PackageChaincodeRequest> request) throws Exception {
+            checkAccout(request.getAccount());
 
-    public static Request buildPackageProposalRequest(
-            TransactionContext<PackageChaincodeRequest> request) throws Exception {
-        checkAccout(request.getAccount());
+            FabricAccount account = (FabricAccount) request.getAccount(); // Account
+            PackageChaincodeRequest packageChaincodeRequest = request.getData();
 
-        FabricAccount account = (FabricAccount) request.getAccount(); // Account
-        PackageChaincodeRequest packageChaincodeRequest = request.getData();
+            // generate proposal
+            ProposalPackage.Proposal proposal = buildPackageProposal(account, packageChaincodeRequest);
+            byte[] signedProposalBytes = signProposal(account, proposal);
 
-        // generate proposal
-        ProposalPackage.Proposal proposal = buildPackageProposal(account, packageChaincodeRequest);
-        byte[] signedProposalBytes = signProposal(account, proposal);
+            TransactionParams transactionParams =
+                    new TransactionParams(new TransactionRequest(), signedProposalBytes, false);
+            //        transactionParams.setOrgNames(new String[]{request.getData().getOrgName()}); //
+            // only 1 in each install request
 
-        TransactionParams transactionParams =
-                new TransactionParams(new TransactionRequest(), signedProposalBytes, false);
-        //        transactionParams.setOrgNames(new String[]{request.getData().getOrgName()}); //
-        // only 1 in each install request
-
-        Request endorserRequest = new Request();
-        endorserRequest.setData(transactionParams.toBytes());
-        return endorserRequest;
-    }
-
+            Request endorserRequest = new Request();
+            endorserRequest.setData(transactionParams.toBytes());
+            return endorserRequest;
+        }
+    */
     private static ProposalPackage.Proposal buildPackageProposal(
             FabricAccount account, PackageChaincodeRequest request) throws Exception {
         request.check(); // check has all params
