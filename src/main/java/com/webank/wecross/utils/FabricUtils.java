@@ -1,27 +1,35 @@
 package com.webank.wecross.utils;
 
-import com.google.protobuf.ByteString;
 import com.moandjiezana.toml.Toml;
-import com.webank.wecross.stub.TransactionResponse;
+import com.webank.wecross.exception.WeCrossException;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.math.BigInteger;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 import org.hyperledger.fabric.sdk.ChaincodeEndorsementPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 public class FabricUtils {
-    private static Logger logger = LoggerFactory.getLogger(FabricUtils.class);
+
+    public static final String CERT_PATTERN =
+            "-+BEGIN\\s+.*CERTIFICATE[^-]*-+(?:\\s|\\r|\\n)+"
+                    + // Header
+                    "([A-Za-z0-9+/=\\r\\n]+)"
+                    + // Base64 text
+                    "-+END\\s+.*CERTIFICATE[^-]*-+\n"; // Footer
+
+    private static final Map<String, String> fileContentMap = new HashMap<>();
 
     public static byte[] longToBytes(long number) {
         BigInteger bigInteger = BigInteger.valueOf(number);
@@ -70,6 +78,43 @@ public class FabricUtils {
         } catch (Exception e) {
             throw new Exception("Read file error: " + e);
         }
+    }
+
+    public static Map<String, String> readFileInMap(Map<String, String> map)
+            throws WeCrossException {
+        if (map == null) return null;
+        // map: key => filePath
+        // resultMap: key => fileContent
+        Map<String, String> resultMap = new HashMap<>();
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            if (Pattern.compile(FabricUtils.CERT_PATTERN, Pattern.MULTILINE)
+                    .matcher(entry.getValue())
+                    .matches()) {
+                resultMap.put(entry.getKey(), entry.getValue());
+                continue;
+            }
+            if (!fileIsExists(entry.getValue())) {
+                String errorMessage = "File: " + entry.getValue() + " is not exists";
+                throw new WeCrossException(WeCrossException.ErrorCode.DIR_NOT_EXISTS, errorMessage);
+            }
+            String fileContent;
+            try {
+                // fileContentMap cache file content
+                if (fileContentMap.containsKey(entry.getValue())
+                        && fileContentMap.get(entry.getValue()) != null) {
+                    fileContent = fileContentMap.get(entry.getValue());
+                } else {
+                    fileContent = readFileContent(entry.getValue());
+                    fileContentMap.put(entry.getValue(), fileContent);
+                }
+                resultMap.put(entry.getKey(), fileContent);
+            } catch (Exception e) {
+                throw new WeCrossException(
+                        WeCrossException.ErrorCode.DIR_NOT_EXISTS,
+                        "Read Cert fail: " + entry.getKey() + entry.getValue());
+            }
+        }
+        return resultMap;
     }
 
     public static Toml readToml(String fileName) throws Exception {
@@ -123,32 +168,5 @@ public class FabricUtils {
         }
 
         return chaincodeEndorsementPolicy;
-    }
-
-    public static byte[] encodeTransactionResponse(TransactionResponse response) {
-
-        switch (response.getResult().length) {
-            case 0:
-                return new byte[] {};
-            case 1:
-                String result = response.getResult()[0];
-                ByteString payload = ByteString.copyFrom(result, Charset.forName("UTF-8"));
-                return payload.toByteArray();
-            default:
-                logger.error(
-                        "encodeTransactionResponse error: Illegal result size: "
-                                + response.getResult().length);
-                return null;
-        }
-    }
-
-    public static TransactionResponse decodeTransactionResponse(byte[] data) {
-        // Fabric only has 1 return object
-        ByteString payload = ByteString.copyFrom(data);
-        String[] result = new String[] {payload.toStringUtf8()};
-
-        TransactionResponse response = new TransactionResponse();
-        response.setResult(result);
-        return response;
     }
 }
