@@ -2,11 +2,7 @@ package com.webank.wecross.stub.fabric;
 
 import com.webank.wecross.common.FabricType;
 import com.webank.wecross.stub.*;
-import com.webank.wecross.stub.fabric.FabricCustomCommand.InstallChaincodeRequest;
-import com.webank.wecross.stub.fabric.FabricCustomCommand.InstallCommand;
-import com.webank.wecross.stub.fabric.FabricCustomCommand.InstantiateChaincodeRequest;
-import com.webank.wecross.stub.fabric.FabricCustomCommand.InstantiateCommand;
-import com.webank.wecross.stub.fabric.FabricCustomCommand.UpgradeCommand;
+import com.webank.wecross.stub.fabric.FabricCustomCommand.*;
 import com.webank.wecross.stub.fabric.hub.HubChaincodeDeployment;
 import com.webank.wecross.stub.fabric.proxy.ProxyChaincodeDeployment;
 import com.webank.wecross.utils.TarUtils;
