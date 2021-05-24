@@ -120,11 +120,11 @@ organizations:
     #    certificateAuthorities:
     #      - ca-org1
     adminPrivateKey:
-      path: ../accounts/fabric_admin_org1/account.key
+      path: conf/accounts/fabric_admin_org1/account.key
     signedCert:
       #      path: src/test/fixture/sdkintegration/aliyz/crypto-config/peerOrganizations/org1.tbs.com/users/Admin@org1.tbs.com/msp/signcerts/Admin@org1.tbs.com-cert.pem
 #      path: /Users/mirsu/Documents/blockchain/wecross/aliyz-case/plugin/fabric-sdk/src/main/resources/crypto-config/peerOrganizations/org1.tbs.com/users/Admin@org1.tbs.com/msp/signcerts/Admin@org1.tbs.com-cert.pem
-      path: ../accounts/fabric_admin_org1/account.crt
+      path: conf/accounts/fabric_admin_org1/account.crt
 #  org2:
 #    mspid: org2MSP
 #    peers:
@@ -155,7 +155,7 @@ organizations:
 #
 orderers:
   orderer.tbs.com:
-    url: grpcs://192.168.1.25:7050
+    url: grpcs://127.0.0.1:7050
     grpcOptions:
       ssl-target-name-override: orderer.tbs.com
       sslProvider: openSSL
@@ -166,7 +166,7 @@ orderers:
       grpc.keepalive_timeout_ms: 180000
       grpc.keepalive_without_calls: true
     tlsCACerts:
-      path: ../fabric/orderer-tlsca.crt
+      path: conf/chains/fabric/orderer-tlsca.crt
 #      path: /Users/mirsu/Documents/blockchain/wecross/aliyz-case/plugin/fabric-sdk/src/main/resources/crypto-config/ordererOrganizations/tbs.com/tlsca/tlsca.tbs.com-cert.pem
 #
 # List of peers to send various requests to, including endorsement, query
@@ -175,7 +175,7 @@ orderers:
 peers:
   peer0.org1.tbs.com:
     # this URL is used to send endorsement and query requests
-    url: grpcs://192.168.1.29:7051
+    url: grpcs://127.0.0.1:7051
     grpcOptions:
       grpc.http2.keepalive_time: 15
       ssl-target-name-override: peer0.org1.tbs.com
@@ -185,7 +185,7 @@ peers:
     #      # TODO: The following causes a NoSuchMethodException to be thrown when sending proposals to the peer...
     #      # grpc.NettyChannelBuilderOption.maxInboundMessageSize: 9000000
     tlsCACerts:
-      path: ../fabric/org1-tlsca.crt
+      path: conf/chains/fabric/org1-tlsca.crt
 #      path: /Users/mirsu/Documents/blockchain/wecross/aliyz-case/plugin/fabric-sdk/src/main/resources/crypto-config/peerOrganizations/org1.tbs.com/peers/peer0.org1.tbs.com/tls/server.crt
 #  peer0.org2.tbs.com:
 #    url: grpcs://192.168.1.30:7051

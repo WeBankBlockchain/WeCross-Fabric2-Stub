@@ -49,3 +49,4 @@ demo/
 *.crt
 *.key
 *_sk
+/src/test/resources/chains/fabric/chaincode/WeCrossProxy/
