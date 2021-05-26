@@ -18,6 +18,7 @@ public class ChaincodeResourceManager {
     private static Logger logger = LoggerFactory.getLogger(ChaincodeResourceManager.class);
 
     private static final long updateChaincodeMapExpires = 10000; // ms
+    private long lastChaincodeMapUpdateTime = 0;
 
     public interface EventHandler {
         void onChange(List<ResourceInfo> resourceInfos);
@@ -242,16 +243,24 @@ public class ChaincodeResourceManager {
 
     public void updateChaincodeMap() {
         synchronized (this) {
-            Map<String, ChaincodeResource> oldMap = this.chaincodeMap;
-            this.chaincodeMap = queryChaincodeMap();
+            if (needUpdateChaincodeMap()) {
 
-            if (eventHandler != null && !isSameChaincodeMap(oldMap, this.chaincodeMap)) {
-                logger.info("Chaincode resource has changed to: {}", this.chaincodeMap.keySet());
-                eventHandler.onChange(getResourceInfoList(false));
+                Map<String, ChaincodeResource> oldMap = this.chaincodeMap;
+                this.chaincodeMap = queryChaincodeMap();
+
+                if (eventHandler != null && !isSameChaincodeMap(oldMap, this.chaincodeMap)) {
+                    logger.info(
+                            "Chaincode resource has changed to: {}", this.chaincodeMap.keySet());
+                    eventHandler.onChange(getResourceInfoList(false));
+                }
+                lastChaincodeMapUpdateTime = System.currentTimeMillis();
             }
-
             dumpChaincodeMap();
         }
+    }
+
+    private boolean needUpdateChaincodeMap() {
+        return System.currentTimeMillis() - lastChaincodeMapUpdateTime > 1000;
     }
 
     private boolean isSameChaincodeMap(
