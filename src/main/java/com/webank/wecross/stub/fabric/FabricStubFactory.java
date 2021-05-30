@@ -73,7 +73,7 @@ public class FabricStubFactory implements StubFactory {
             String accountTemplate =
                     "[account]\n"
                             + "    type = 'Fabric2.0'\n"
-                            + "    mspid = 'org1MSP'\n"
+                            + "    mspid = 'Org1MSP'\n"
                             + "    keystore = 'account.key'\n"
                             + "    signcert = 'account.crt'";
 

@@ -15,7 +15,6 @@ import com.webank.wecross.stub.fabric.FabricStubFactory;
 import com.webank.wecross.stub.fabric.SystemChaincodeUtility;
 import com.webank.wecross.stub.fabric.chaincode.ChaincodeHandler;
 import java.io.File;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -24,15 +23,12 @@ import org.hyperledger.fabric.sdk.security.CryptoSuite;
 
 public class ProxyChaincodeDeployment {
 
-    private static NetworkConfig networkConfig;
     private static LifecycleChaincodeEndorsementPolicy lccEndorsementPolicy;
     private static ChaincodeCollectionConfiguration ccCollectionConfiguration;
 
     static {
         try {
-            networkConfig =
-                    NetworkConfig.fromYamlFile(
-                            new File("conf/fabric-sdk" + File.separator + "network_config.yaml"));
+            /*
             lccEndorsementPolicy =
                     LifecycleChaincodeEndorsementPolicy.fromSignaturePolicyYamlFile(
                             Paths.get(
@@ -43,6 +39,8 @@ public class ProxyChaincodeDeployment {
                     ChaincodeCollectionConfiguration.fromYamlFile(
                             new File(
                                     "conf/fabric-sdk" + File.separator + "collection-config.yaml"));
+
+             */
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -101,13 +99,23 @@ public class ProxyChaincodeDeployment {
             System.out.println("SUCCESS: WeCrossProxy has been deployed to all connected org");
         }
     }
+
+    public static void deploy(String chainPath) throws Exception {
+        String stubPath = "classpath:" + File.separator + chainPath;
+        FabricConnection connection = FabricConnectionFactory.build(stubPath);
+
+        String[] args = new String[] {connection.getChannel().getName()};
+        SystemChaincodeUtility.deploy(
+                chainPath, SystemChaincodeUtility.Proxy, StubConstant.PROXY_NAME, args);
+    }
+
     /**
      * @Description: 部署代理合约
      *
      * @params: [chainPath]
      * @return: void @Author: mirsu @Date: 2020/10/30 11:00
      */
-    public static void deploy(String chainPath) throws Exception {
+    public static void deploy2(String chainPath) throws Exception {
         String stubPath = "classpath:" + File.separator + chainPath;
 
         FabricStubConfigParser configFile = new FabricStubConfigParser(stubPath);
@@ -135,29 +143,30 @@ public class ProxyChaincodeDeployment {
 
             long sequence = 1L;
             String sourcePath =
-                    "conf" + File.separator + chainPath + File.separator + chaincodeName;
+                    "conf"
+                            + File.separator
+                            + chainPath
+                            + File.separator
+                            + "chaincode"
+                            + File.separator
+                            + chaincodeName;
             System.out.println("sourcePath------->" + sourcePath);
             // 打包
             String chaincodeLabel = chaincodeName + "_" + version;
             LifecycleChaincodePackage chaincodePackage =
                     packageChaincode(sourcePath, chaincodeName, chaincodeLabel);
-            Collection<NetworkConfig.OrgInfo> organizationInfos =
-                    networkConfig.getOrganizationInfos();
-            Iterator<NetworkConfig.OrgInfo> iterator = organizationInfos.iterator();
             String orgName;
-            Channel channel = null;
-            HFClient hfClient = null;
-            for (NetworkConfig.OrgInfo orgInfo : organizationInfos) {
-                System.out.println("orgInfo   = " + orgInfo);
-                orgName = orgInfo.getName();
+            Channel channel = connection.getChannel();
+            HFClient hfClient = connection.getHfClient();
+            for (Map.Entry<String, FabricStubConfigParser.Orgs.Org> orgEntry :
+                    configFile.getOrgs().entrySet()) {
+                System.out.println("orgInfo   = " + orgEntry);
+                orgName = orgEntry.getKey();
                 System.out.println("orgName   = " + orgName);
-                hfClient = getTheClient(orgName);
                 System.out.println("hfClient   = " + hfClient.toString());
-                channel = constructChannel(hfClient, channelName);
                 System.out.println("channel   = " + channel.toString());
                 Collection<Peer> peers = ChaincodeHandler.extractPeersFromChannel(channel, orgName);
                 System.out.println("peers   = " + peers.toString());
-
                 System.out.println("install chaincode to " + orgName + "  ...");
                 String packageId =
                         ChaincodeHandler.installChaincode(
@@ -189,10 +198,11 @@ public class ProxyChaincodeDeployment {
                 System.out.println(
                         "approve chaincode to " + orgName + " end, result = " + event.isValid());
             }
-            for (NetworkConfig.OrgInfo orgInfo : organizationInfos) {
-                orgName = orgInfo.getName();
-                hfClient = getTheClient(orgName);
-                channel = constructChannel(hfClient, channelName);
+
+            for (Map.Entry<String, FabricStubConfigParser.Orgs.Org> orgEntry :
+                    configFile.getOrgs().entrySet()) {
+                System.out.println("orgInfo   = " + orgEntry);
+                orgName = orgEntry.getKey();
                 Collection<Peer> peers = ChaincodeHandler.extractPeersFromChannel(channel, orgName);
 
                 System.out.println("commit chaincode to " + orgName + "  ...");
@@ -236,13 +246,6 @@ public class ProxyChaincodeDeployment {
 
             System.out.println("SUCCESS: " + chaincodeName + " has been deployed to " + chainPath);
         }
-    }
-
-    private static HFClient getTheClient(String orgName) throws Exception {
-        HFClient client = HFClient.createNewInstance();
-        client.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
-        client.setUserContext(networkConfig.getPeerAdmin(orgName));
-        return client;
     }
 
     private static void initChaincode(
@@ -335,7 +338,7 @@ public class ProxyChaincodeDeployment {
                         .setChaincodeLabel(chaincodeLabel)
                         .setChaincodeType(language)
                         .setChaincodePath("github.com")
-                        .setChaincodeMetainfoPath(sourcePath)
+                        .setChaincodeMetaInfoPath(sourcePath)
                         .setChaincodeSourcePath(sourcePath);
         LifecycleChaincodePackage lifecycleChaincodePackage =
                 ChaincodeHandler.packageChaincode(packageChaincodeRequest);
@@ -384,48 +387,50 @@ public class ProxyChaincodeDeployment {
                         + "\n approve end");
     }
 
-    private static String installChaincode(
-            FabricAccount account,
-            LifecycleChaincodePackage chaincodePackage,
-            String channelName,
-            String orgName)
-            throws Exception {
-        System.out.println(
-                "Install chaincode " + chaincodePackage.getLabel() + " to " + orgName + " ...");
-        HFClient hfClient = HFClient.createNewInstance();
-        hfClient.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
-        hfClient.setUserContext(account.getUser());
-        System.out.println("account.getUser()   " + account.getUser().getAccount());
-        System.out.println("account.getMspId()   " + account.getUser().getMspId());
-        System.out.println("account.getName()   " + account.getUser().getName());
-        System.out.println("account.getRoles()   " + account.getUser().getRoles());
-        System.out.println(
-                "account.getEnrollment().getCert   :"
-                        + account.getUser().getEnrollment().getCert());
-        Channel channel = constructChannel(hfClient, channelName);
-        //        Channel channel =  hfClient.newChannel(channelName); // ChannelName
-        Collection<Peer> peers = ChaincodeHandler.extractPeersFromChannel(channel, orgName);
-        String packageId =
-                ChaincodeHandler.installChaincode(hfClient, channel, peers, chaincodePackage);
-        System.out.println(
-                "install chaincode to -> "
-                        + orgName
-                        + ", packageId -> "
-                        + packageId
-                        + "\n install end");
-        return packageId;
-    }
-
-    private static Channel constructChannel(HFClient hfClient, String channelName)
-            throws Exception {
-        Channel newChannel = hfClient.loadChannelFromConfig(channelName, networkConfig);
-        if (newChannel == null) {
-            throw new Exception("Channel " + channelName + " is not defined in the config file!");
+    /*
+        private static String installChaincode(
+                FabricAccount account,
+                LifecycleChaincodePackage chaincodePackage,
+                String channelName,
+                String orgName)
+                throws Exception {
+            System.out.println(
+                    "Install chaincode " + chaincodePackage.getLabel() + " to " + orgName + " ...");
+            HFClient hfClient = HFClient.createNewInstance();
+            hfClient.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
+            hfClient.setUserContext(account.getUser());
+            System.out.println("account.getUser()   " + account.getUser().getAccount());
+            System.out.println("account.getMspId()   " + account.getUser().getMspId());
+            System.out.println("account.getName()   " + account.getUser().getName());
+            System.out.println("account.getRoles()   " + account.getUser().getRoles());
+            System.out.println(
+                    "account.getEnrollment().getCert   :"
+                            + account.getUser().getEnrollment().getCert());
+            Channel channel = constructChannel(hfClient, channelName);
+            //        Channel channel =  hfClient.newChannel(channelName); // ChannelName
+            Collection<Peer> peers = ChaincodeHandler.extractPeersFromChannel(channel, orgName);
+            String packageId =
+                    ChaincodeHandler.installChaincode(hfClient, channel, peers, chaincodePackage);
+            System.out.println(
+                    "install chaincode to -> "
+                            + orgName
+                            + ", packageId -> "
+                            + packageId
+                            + "\n install end");
+            return packageId;
         }
 
-        return newChannel.initialize();
-    }
 
+        private static Channel constructChannel(HFClient hfClient, String channelName)
+                throws Exception {
+            Channel newChannel = hfClient.loadChannelFromConfig(channelName, networkConfig);
+            if (newChannel == null) {
+                throw new Exception("Channel " + channelName + " is not defined in the config file!");
+            }
+
+            return newChannel.initialize();
+        }
+    */
     public static void upgrade(String chainPath) throws Exception {
         String stubPath = "classpath:" + File.separator + chainPath;
         FabricConnection connection = FabricConnectionFactory.build(stubPath);
@@ -442,6 +447,7 @@ public class ProxyChaincodeDeployment {
         String version = String.valueOf(System.currentTimeMillis() / 1000);
         FabricConnection connection = FabricConnectionFactory.build(stubPath);
         connection.start();
+        connection.hasProxyDeployed2AllPeers();
 
         Set<String> orgNames = configFile.getOrgs().keySet();
         Set<String> chainOrgNames = connection.getProxyOrgNames(true);
@@ -491,6 +497,7 @@ public class ProxyChaincodeDeployment {
                 usage();
         }
     }
+
     /** @Description: driver 与 connection 的组合类 @Author: mirsu @Date: 2020/10/30 11:20 */
     public static class DirectBlockHeaderManager implements BlockManager {
         private Driver driver;

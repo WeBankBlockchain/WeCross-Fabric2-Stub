@@ -25,7 +25,7 @@ public class PackageChaincodeRequest implements ChaincodeRequest {
 
     private String chaincodeLabel;
     private String chaincodeName;
-    private String chaincodeMetainfoPath;
+    private String chaincodeMetaInfoPath;
     private String chaincodeSourcePath;
     private String chaincodePath;
     private String chaincodeType;
@@ -59,8 +59,8 @@ public class PackageChaincodeRequest implements ChaincodeRequest {
         return this;
     }
 
-    public PackageChaincodeRequest setChaincodeMetainfoPath(String chaincodeMetainfoPath) {
-        this.chaincodeMetainfoPath = chaincodeMetainfoPath;
+    public PackageChaincodeRequest setChaincodeMetaInfoPath(String chaincodeMetaInfoPath) {
+        this.chaincodeMetaInfoPath = chaincodeMetaInfoPath;
         return this;
     }
 
@@ -69,8 +69,8 @@ public class PackageChaincodeRequest implements ChaincodeRequest {
         return this;
     }
 
-    public String getChaincodeMetainfoPath() {
-        return chaincodeMetainfoPath;
+    public String getChaincodeMetaInfoPath() {
+        return chaincodeMetaInfoPath;
     }
 
     public String getChaincodeSourcePath() {
@@ -111,7 +111,7 @@ public class PackageChaincodeRequest implements ChaincodeRequest {
         if (getChaincodePath() == null) {
             throw new Exception("ChaincodePath is null");
         }
-        if (getChaincodeMetainfoPath() == null) {
+        if (getChaincodeMetaInfoPath() == null) {
             throw new Exception("ChaincodeMetainfoPath is null");
         }
         if (getChaincodeSourcePath() == null) {
@@ -150,7 +150,7 @@ public class PackageChaincodeRequest implements ChaincodeRequest {
         if (this.chaincodeType == null) {
             throw new Exception("chaincodeType not set");
         }
-        if (this.chaincodeMetainfoPath == null) {
+        if (this.chaincodeMetaInfoPath == null) {
             throw new Exception("chaincodeMetainfoPath not set");
         }
         if (this.chaincodeSourcePath == null) {

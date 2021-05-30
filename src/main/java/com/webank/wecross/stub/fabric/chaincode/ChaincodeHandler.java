@@ -2,7 +2,6 @@ package com.webank.wecross.stub.fabric.chaincode;
 
 import com.webank.wecross.common.FabricType;
 import com.webank.wecross.stub.*;
-import com.webank.wecross.stub.fabric.*;
 import com.webank.wecross.stub.fabric.FabricCustomCommand.*;
 import java.nio.file.Paths;
 import java.util.*;
@@ -46,7 +45,7 @@ public class ChaincodeHandler {
                             Paths.get(request.getChaincodeSourcePath()),
                             FabricType.stringTochainCodeType(request.getChaincodeType()),
                             ccPath,
-                            Paths.get(request.getChaincodeMetainfoPath()));
+                            Paths.get(request.getChaincodeMetaInfoPath()));
         } catch (Exception e) {
             String errorMessage = "Fabric driver package exception: " + e;
             logger.error(errorMessage);

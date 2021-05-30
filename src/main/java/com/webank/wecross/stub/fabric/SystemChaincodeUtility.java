@@ -1,9 +1,13 @@
 package com.webank.wecross.stub.fabric;
 
 import com.webank.wecross.stub.*;
+import com.webank.wecross.stub.fabric.FabricCustomCommand.ApproveChaincodeRequest;
+import com.webank.wecross.stub.fabric.FabricCustomCommand.CommitChaincodeRequest;
 import com.webank.wecross.stub.fabric.FabricCustomCommand.InstallChaincodeRequest;
 import com.webank.wecross.stub.fabric.FabricCustomCommand.InstantiateChaincodeRequest;
+import com.webank.wecross.stub.fabric.FabricCustomCommand.PackageChaincodeRequest;
 import com.webank.wecross.stub.fabric.FabricCustomCommand.UpgradeChaincodeRequest;
+import com.webank.wecross.stub.fabric.chaincode.ChaincodeHandler;
 import com.webank.wecross.utils.TarUtils;
 import java.io.File;
 import java.util.LinkedList;
@@ -11,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import org.hyperledger.fabric.sdk.LifecycleChaincodePackage;
 
 public class SystemChaincodeUtility {
     public static final int Proxy = 0;
@@ -43,50 +48,82 @@ public class SystemChaincodeUtility {
 
         FabricStubFactory fabricStubFactory = new FabricStubFactory();
         Driver driver = fabricStubFactory.newDriver();
-        BlockManager blockHeaderManager = new DirectBlockManager(driver, connection);
+        BlockManager blockManager = new DirectBlockManager(driver, connection);
         List<String> orgNames = new LinkedList<>();
         String adminName = configFile.getFabricServices().getOrgUserName();
         Account admin =
                 fabricStubFactory.newAccount(
                         adminName, "classpath:accounts" + File.separator + adminName);
 
+        String packageId = null;
+        long sequence = 1L;
+
+        // package
+        String sourcePath =
+                "conf"
+                        + File.separator
+                        + chainPath
+                        + File.separator
+                        + "chaincode"
+                        + File.separator
+                        + chaincodeName;
+        System.out.println("sourcePath------->" + sourcePath);
+        String chaincodeLabel = chaincodeName + "_" + version;
+        LifecycleChaincodePackage chaincodePackage =
+                packageChaincode(sourcePath, chaincodeName, chaincodeLabel, "GO_LANG");
+        byte[] code = chaincodePackage.getAsBytes();
+
         for (Map.Entry<String, FabricStubConfigParser.Orgs.Org> orgEntry :
                 configFile.getOrgs().entrySet()) {
             String orgName = orgEntry.getKey();
             orgNames.add(orgName);
             String accountName = orgEntry.getValue().getAdminName();
-
             Account orgAdmin =
                     fabricStubFactory.newAccount(
                             accountName, "classpath:accounts" + File.separator + accountName);
 
-            String chaincodeFilesDir =
-                    "classpath:"
-                            + chainPath
-                            + File.separator
-                            + "chaincode/"
-                            + chaincodeName
-                            + File.separator;
-            byte[] code = TarUtils.generateTarGzInputStreamBytesFoGoChaincode(chaincodeFilesDir);
-            install(
+            // install
+            String currentPackageId =
+                    install(
+                            orgName,
+                            connection,
+                            driver,
+                            orgAdmin,
+                            blockManager,
+                            chaincodeName,
+                            code,
+                            version);
+
+            if (packageId != null && !packageId.equals(currentPackageId)) {
+                System.out.println("PackageIds are not the same in different org:" + orgName);
+            }
+            packageId = currentPackageId;
+
+            // approve
+            approveForMyOrg(
                     orgName,
                     connection,
                     driver,
                     orgAdmin,
-                    blockHeaderManager,
+                    blockManager,
                     chaincodeName,
-                    code,
-                    version);
+                    version,
+                    sequence,
+                    packageId);
         }
-        instantiate(
+
+        // commit
+        commitChaincodeDefinition(
                 orgNames,
                 connection,
                 driver,
                 admin,
-                blockHeaderManager,
+                blockManager,
                 chaincodeName,
-                args,
-                version);
+                version,
+                sequence,
+                packageId);
+
         System.out.println("SUCCESS: " + chaincodeName + " has been deployed to " + chainPath);
     }
 
@@ -126,21 +163,22 @@ public class SystemChaincodeUtility {
                             + chaincodeName
                             + File.separator;
             byte[] code = TarUtils.generateTarGzInputStreamBytesFoGoChaincode(chaincodeFilesDir);
-            install(
-                    orgName,
-                    connection,
-                    driver,
-                    orgAdmin,
-                    blockManager,
-                    chaincodeName,
-                    code,
-                    version);
+            String packageId =
+                    install(
+                            orgName,
+                            connection,
+                            driver,
+                            orgAdmin,
+                            blockManager,
+                            chaincodeName,
+                            code,
+                            version);
         }
         upgrade(orgNames, connection, driver, admin, blockManager, chaincodeName, args, version);
         System.out.println("SUCCESS: " + chaincodeName + " has been upgraded to " + chainPath);
     }
 
-    private static void install(
+    private static String install(
             String orgName,
             FabricConnection connection,
             Driver driver,
@@ -155,7 +193,7 @@ public class SystemChaincodeUtility {
         String channelName = connection.getChannel().getName();
         String language = "GO_LANG";
 
-        InstallChaincodeRequest installChaincodeRequest =
+        InstallChaincodeRequest request =
                 InstallChaincodeRequest.build()
                         .setName(chaincodeName)
                         .setVersion(version)
@@ -167,19 +205,126 @@ public class SystemChaincodeUtility {
         TransactionContext transactionContext =
                 new TransactionContext(user, null, null, blockManager);
 
-        CompletableFuture<TransactionException> future1 = new CompletableFuture<>();
+        CompletableFuture<TransactionResponse> future1 = new CompletableFuture<>();
+        CompletableFuture<TransactionException> future2 = new CompletableFuture<>();
+
         ((FabricDriver) driver)
                 .asyncInstallChaincode(
                         transactionContext,
-                        installChaincodeRequest,
+                        request,
+                        connection,
+                        (transactionException, transactionResponse) -> {
+                            future1.complete(transactionResponse);
+                            future2.complete(transactionException);
+                        });
+
+        TransactionResponse transactionResponse = future1.get(80, TimeUnit.SECONDS);
+        TransactionException transactionException = future2.get(80, TimeUnit.SECONDS);
+        if (!transactionException.isSuccess()) {
+            throw new Exception("Install error: " + transactionException.getMessage());
+        } else {
+            String packageId = transactionResponse.getResult()[0];
+            System.out.println(
+                    "Install success, "
+                            + chaincodeName
+                            + ":"
+                            + version
+                            + " to "
+                            + orgName
+                            + " packageId: "
+                            + packageId);
+            return packageId;
+        }
+    }
+
+    private static void approveForMyOrg(
+            String orgName,
+            FabricConnection connection,
+            Driver driver,
+            Account user,
+            BlockManager blockManager,
+            String chaincodeName,
+            String version,
+            long sequence,
+            String packageId)
+            throws Exception {
+
+        System.out.println("Approve " + chaincodeName + ":" + version + " to " + orgName + " ...");
+
+        String channelName = connection.getChannel().getName();
+
+        ApproveChaincodeRequest request =
+                ApproveChaincodeRequest.build()
+                        .setSequence(sequence)
+                        .setName(chaincodeName)
+                        .setChannelName(channelName)
+                        .setVersion(version)
+                        .setPackageId(packageId)
+                        .setOrgName(orgName);
+
+        TransactionContext transactionContext =
+                new TransactionContext(user, null, null, blockManager);
+
+        CompletableFuture<TransactionException> future = new CompletableFuture<>();
+        ((FabricDriver) driver)
+                .asyncApproveChaincode(
+                        transactionContext,
+                        request,
                         connection,
                         (transactionException, transactionResponse) ->
-                                future1.complete(transactionException));
+                                future.complete(transactionException));
 
-        TransactionException e1 = future1.get(80, TimeUnit.SECONDS);
-        if (!e1.isSuccess()) {
-            System.out.println("WARNING: asyncCustomCommand install: " + e1.getMessage());
+        TransactionException transactionException = future.get(180, TimeUnit.SECONDS);
+        if (!transactionException.isSuccess()) {
+            throw new Exception("Approve error: " + transactionException.getMessage());
         }
+        System.out.println(
+                "Approve success, " + chaincodeName + ":" + version + " to " + orgName + " ...");
+    }
+
+    private static void commitChaincodeDefinition(
+            List<String> orgNames,
+            FabricConnection connection,
+            Driver driver,
+            Account user,
+            BlockManager blockManager,
+            String chaincodeName,
+            String version,
+            long sequence,
+            String packageId)
+            throws Exception {
+
+        System.out.println("Commit " + chaincodeName + ":" + version + " to " + orgNames + " ...");
+
+        String channelName = connection.getChannel().getName();
+
+        CommitChaincodeRequest request =
+                CommitChaincodeRequest.build()
+                        .setSequence(sequence)
+                        .setName(chaincodeName)
+                        .setChannelName(channelName)
+                        .setVersion(version)
+                        .setPackageId(packageId)
+                        .setOrgNames(orgNames.toArray(new String[] {}));
+
+        TransactionContext transactionContext =
+                new TransactionContext(user, null, null, blockManager);
+
+        CompletableFuture<TransactionException> future = new CompletableFuture<>();
+        ((FabricDriver) driver)
+                .asyncCommitChaincode(
+                        transactionContext,
+                        request,
+                        connection,
+                        (transactionException, transactionResponse) ->
+                                future.complete(transactionException));
+
+        TransactionException transactionException = future.get(180, TimeUnit.SECONDS);
+        if (!transactionException.isSuccess()) {
+            throw new Exception("Commit chaincode error: " + transactionException.getMessage());
+        }
+        System.out.println(
+                "Commit success, " + chaincodeName + ":" + version + " to " + orgNames + " ...");
     }
 
     private static void instantiate(
@@ -300,5 +445,26 @@ public class SystemChaincodeUtility {
             driver.asyncGetBlock(
                     blockNumber, true, connection, (e, block) -> callback.onResponse(e, block));
         }
+    }
+
+    private static LifecycleChaincodePackage packageChaincode(
+            String sourcePath, String chaincodeName, String chaincodeLabel, String language)
+            throws Exception {
+        System.out.println("Package " + chaincodeName + " ...");
+        // String language = "GO_LANG";
+        PackageChaincodeRequest packageChaincodeRequest =
+                PackageChaincodeRequest.build()
+                        .setChaincodeName(chaincodeName)
+                        .setChaincodeLabel(chaincodeLabel)
+                        .setChaincodeType(language)
+                        .setChaincodePath("github.com")
+                        .setChaincodeMetaInfoPath(sourcePath)
+                        .setChaincodeSourcePath(sourcePath);
+        LifecycleChaincodePackage lifecycleChaincodePackage =
+                ChaincodeHandler.packageChaincode(packageChaincodeRequest);
+        System.out.println(
+                "Package success!!! lifecycleChaincodePackage"
+                        + lifecycleChaincodePackage.getPath());
+        return lifecycleChaincodePackage;
     }
 }
