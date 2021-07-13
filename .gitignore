@@ -49,4 +49,5 @@ demo/
 *.crt
 *.key
 *_sk
-/src/test/resources/chains/fabric/chaincode/WeCrossProxy/
+/src/test/resources/chains/fabric2/chaincode/WeCrossProxy/
+conf/*

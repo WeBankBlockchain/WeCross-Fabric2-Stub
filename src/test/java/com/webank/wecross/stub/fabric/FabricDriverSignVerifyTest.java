@@ -1,6 +1,8 @@
 package com.webank.wecross.stub.fabric;
 
-import com.webank.wecross.account.FabricAccount;
+import com.webank.wecross.stub.fabric2.account.FabricAccount;
+import com.webank.wecross.stub.fabric2.FabricDriver;
+import com.webank.wecross.stub.fabric2.FabricStubFactory;
 import java.nio.charset.StandardCharsets;
 import org.junit.Assert;
 import org.junit.Test;

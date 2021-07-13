@@ -1,12 +1,17 @@
 package com.webank.wecross.stub.fabric;
 
-import com.webank.wecross.common.FabricType;
+import com.webank.wecross.stub.fabric2.common.FabricType;
 import com.webank.wecross.stub.*;
-import com.webank.wecross.stub.fabric.FabricCustomCommand.InstallChaincodeRequest;
-import com.webank.wecross.stub.fabric.FabricCustomCommand.InstantiateChaincodeRequest;
-import com.webank.wecross.stub.fabric.proxy.ProxyChaincodeDeployment;
-import com.webank.wecross.utils.FabricUtils;
-import com.webank.wecross.utils.TarUtils;
+import com.webank.wecross.stub.fabric2.FabricConnection;
+import com.webank.wecross.stub.fabric2.FabricConnectionFactory;
+import com.webank.wecross.stub.fabric2.FabricCustomCommand.InstallChaincodeRequest;
+import com.webank.wecross.stub.fabric2.FabricCustomCommand.InstantiateChaincodeRequest;
+import com.webank.wecross.stub.fabric2.FabricDriver;
+import com.webank.wecross.stub.fabric2.FabricStubFactory;
+import com.webank.wecross.stub.fabric2.SystemChaincodeUtility;
+import com.webank.wecross.stub.fabric2.proxy.ProxyChaincodeDeployment;
+import com.webank.wecross.stub.fabric2.utils.FabricUtils;
+import com.webank.wecross.stub.fabric2.utils.TarUtils;
 import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -19,7 +24,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class ProxyChaincodeTest {
-    private static final String chainPath = "chains/fabric";
+    private static final String chainPath = "chains/fabric2";
     private static final Map<String, Account> org2User = new HashMap<>();
     private FabricConnection connection;
     private Driver driver;
@@ -72,7 +77,7 @@ public class ProxyChaincodeTest {
 
     public void deployProxyChaincode() throws Exception {
         try {
-            String chainPath = "chains/fabric";
+            String chainPath = "chains/fabric2";
             if (!ProxyChaincodeDeployment.hasInstantiate(chainPath)) {
                 ProxyChaincodeDeployment.deploy(chainPath);
             }
@@ -82,10 +87,11 @@ public class ProxyChaincodeTest {
             Assert.assertTrue(false);
         }
     }
+
     /*
         public void deployHubChaincode() throws Exception {
             try {
-                String chainPath = "chains/fabric";
+                String chainPath = "chains/fabric2";
                 if (!HubChaincodeDeployment.hasInstantiate(chainPath)) {
                     HubChaincodeDeployment.deploy(chainPath);
                 }
@@ -207,7 +213,7 @@ public class ProxyChaincodeTest {
                             TransactionContext transactionContext =
                                     new TransactionContext(
                                             admin,
-                                            Path.decode("payment.fabric." + testChaincodeName),
+                                            Path.decode("payment.fabric2." + testChaincodeName),
                                             testChaincodeResourceInfo,
                                             blockManager);
 
@@ -272,7 +278,7 @@ public class ProxyChaincodeTest {
                             TransactionContext transactionContext =
                                     new TransactionContext(
                                             admin,
-                                            Path.decode("payment.fabric." + testChaincodeName),
+                                            Path.decode("payment.fabric2." + testChaincodeName),
                                             testChaincodeResourceInfo,
                                             blockManager);
 

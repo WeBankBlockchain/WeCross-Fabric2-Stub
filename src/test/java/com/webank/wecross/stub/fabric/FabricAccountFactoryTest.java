@@ -1,8 +1,8 @@
 package com.webank.wecross.stub.fabric;
 
-import com.webank.wecross.account.FabricAccount;
-import com.webank.wecross.account.FabricAccountFactory;
-import com.webank.wecross.common.FabricType;
+import com.webank.wecross.stub.fabric2.account.FabricAccount;
+import com.webank.wecross.stub.fabric2.account.FabricAccountFactory;
+import com.webank.wecross.stub.fabric2.common.FabricType;
 import org.junit.Assert;
 import org.junit.Test;
 

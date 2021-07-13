@@ -1,11 +1,19 @@
 package com.webank.wecross.stub.fabric;
 
-import com.webank.wecross.common.FabricType;
+import com.webank.wecross.stub.fabric2.common.FabricType;
 import com.webank.wecross.stub.*;
-import com.webank.wecross.stub.fabric.FabricCustomCommand.*;
-import com.webank.wecross.stub.fabric.hub.HubChaincodeDeployment;
-import com.webank.wecross.stub.fabric.proxy.ProxyChaincodeDeployment;
-import com.webank.wecross.utils.TarUtils;
+import com.webank.wecross.stub.fabric2.FabricBlock;
+import com.webank.wecross.stub.fabric2.FabricConnection;
+import com.webank.wecross.stub.fabric2.FabricCustomCommand.InstallChaincodeRequest;
+import com.webank.wecross.stub.fabric2.FabricCustomCommand.InstallCommand;
+import com.webank.wecross.stub.fabric2.FabricCustomCommand.InstantiateChaincodeRequest;
+import com.webank.wecross.stub.fabric2.FabricCustomCommand.InstantiateCommand;
+import com.webank.wecross.stub.fabric2.FabricCustomCommand.UpgradeCommand;
+import com.webank.wecross.stub.fabric2.FabricDriver;
+import com.webank.wecross.stub.fabric2.FabricStubFactory;
+import com.webank.wecross.stub.fabric2.hub.HubChaincodeDeployment;
+import com.webank.wecross.stub.fabric2.proxy.ProxyChaincodeDeployment;
+import com.webank.wecross.stub.fabric2.utils.TarUtils;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -27,27 +35,27 @@ public class FabricDriverTest {
     private MockBlockManager blockHeaderManager;
 
     public FabricDriverTest() throws Exception {
-        deploySystemChaincodes();
+        // deploySystemChaincodes();
 
         FabricStubFactory fabricStubFactory = new FabricStubFactory();
         driver = (FabricDriver) fabricStubFactory.newDriver();
-        connection = fabricStubFactory.newConnection("classpath:chains/fabric/");
-        account = fabricStubFactory.newAccount("fabric_user1", "classpath:accounts/fabric_user1/");
+        connection = fabricStubFactory.newConnection("classpath:chains/fabric2/");
+        account = fabricStubFactory.newAccount("fabric_admin", "classpath:accounts/fabric_admin/");
         admin = fabricStubFactory.newAccount("fabric_admin", "classpath:accounts/fabric_admin/");
         resourceInfo = new ResourceInfo();
         for (ResourceInfo info : driver.getResources(connection)) {
-            if (info.getName().equals("mycc")) {
+            if (info.getName().equals("sacc")) {
                 resourceInfo = info;
             }
         }
-        path = Path.decode("payment.fabric.mycc");
+        path = Path.decode("payment.fabric2.sacc");
 
         blockHeaderManager = new MockBlockManager(driver, connection);
     }
 
     public void deploySystemChaincodes() throws Exception {
         try {
-            String chainPath = "chains/fabric";
+            String chainPath = "chains/fabric2";
             if (!ProxyChaincodeDeployment.hasInstantiate(chainPath)) {
                 ProxyChaincodeDeployment.deploy(chainPath);
             }
@@ -64,7 +72,7 @@ public class FabricDriverTest {
     @Test
     public void encodeDecodeTransactionRequestTest() {
         TransactionRequest transactionRequest =
-                new TransactionRequest("invoke", new String[] {"a", "b", "10"});
+                new TransactionRequest("set", new String[] {"a", "10"});
 
         TransactionContext transactionContext =
                 new TransactionContext(account, path, resourceInfo, null);
@@ -118,7 +126,7 @@ public class FabricDriverTest {
     @Test
     public void asyncCallTest() throws Exception {
         TransactionRequest transactionRequest = new TransactionRequest();
-        transactionRequest.setMethod("query");
+        transactionRequest.setMethod("get");
         transactionRequest.setArgs(new String[] {"a"});
 
         TransactionContext transactionContext =
@@ -146,7 +154,7 @@ public class FabricDriverTest {
     @Test
     public void asyncCallByProxyTest() throws Exception {
         TransactionRequest transactionRequest = new TransactionRequest();
-        transactionRequest.setMethod("query");
+        transactionRequest.setMethod("get");
         transactionRequest.setArgs(new String[] {"a"});
 
         TransactionContext transactionContext =
@@ -306,7 +314,7 @@ public class FabricDriverTest {
     @Test
     public void getVerifiedTransactionTest() throws Exception {
         TransactionRequest transactionRequest = new TransactionRequest();
-        transactionRequest.setMethod("query");
+        transactionRequest.setMethod("get");
         transactionRequest.setArgs(new String[] {"a"});
 
         TransactionContext transactionContext =
@@ -669,7 +677,7 @@ public class FabricDriverTest {
     }
 
     private String saccSet(String saccRealName, String key, String value) throws Exception {
-        Path saccPath = Path.decode("payment.fabric." + saccRealName);
+        Path saccPath = Path.decode("payment.fabric2." + saccRealName);
         TransactionRequest transactionRequest = new TransactionRequest();
         transactionRequest.setMethod("set");
         transactionRequest.setArgs(new String[] {key, value});
@@ -705,7 +713,7 @@ public class FabricDriverTest {
     }
 
     private String saccGet(String saccRealName, String key) throws Exception {
-        Path saccPath = Path.decode("payment.fabric." + saccRealName);
+        Path saccPath = Path.decode("payment.fabric2." + saccRealName);
         TransactionRequest transactionRequest = new TransactionRequest();
         transactionRequest.setMethod("get");
         transactionRequest.setArgs(new String[] {key});
@@ -742,8 +750,8 @@ public class FabricDriverTest {
 
     private TransactionResponse sendOneTransaction() throws Exception {
         TransactionRequest transactionRequest = new TransactionRequest();
-        transactionRequest.setMethod("invoke");
-        transactionRequest.setArgs(new String[] {"a", "b", "10"});
+        transactionRequest.setMethod("set");
+        transactionRequest.setArgs(new String[] {"a", "101"});
 
         TransactionContext transactionContext =
                 new TransactionContext(account, path, resourceInfo, blockHeaderManager);
@@ -774,8 +782,8 @@ public class FabricDriverTest {
 
     private TransactionResponse sendOneTransactionAsync() throws Exception {
         TransactionRequest transactionRequest = new TransactionRequest();
-        transactionRequest.setMethod("invoke");
-        transactionRequest.setArgs(new String[] {"a", "b", "10"});
+        transactionRequest.setMethod("set");
+        transactionRequest.setArgs(new String[] {"a", "101"});
 
         TransactionContext transactionContext =
                 new TransactionContext(account, path, resourceInfo, blockHeaderManager);
@@ -798,8 +806,8 @@ public class FabricDriverTest {
 
     private TransactionResponse sendOneTransactionByProxyAsync() throws Exception {
         TransactionRequest transactionRequest = new TransactionRequest();
-        transactionRequest.setMethod("invoke");
-        transactionRequest.setArgs(new String[] {"a", "b", "10"});
+        transactionRequest.setMethod("set");
+        transactionRequest.setArgs(new String[] {"a", "101"});
 
         TransactionContext transactionContext =
                 new TransactionContext(account, path, resourceInfo, blockHeaderManager);
