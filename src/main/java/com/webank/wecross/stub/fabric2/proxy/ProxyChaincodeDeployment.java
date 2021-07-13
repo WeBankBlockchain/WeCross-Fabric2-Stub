@@ -1,8 +1,5 @@
 package com.webank.wecross.stub.fabric2.proxy;
 
-import com.webank.wecross.stub.fabric2.account.FabricAccount;
-import com.webank.wecross.stub.fabric2.account.FabricAccountFactory;
-import com.webank.wecross.stub.fabric2.common.FabricType;
 import com.webank.wecross.stub.Block;
 import com.webank.wecross.stub.BlockManager;
 import com.webank.wecross.stub.Connection;
@@ -10,19 +7,12 @@ import com.webank.wecross.stub.Driver;
 import com.webank.wecross.stub.StubConstant;
 import com.webank.wecross.stub.fabric2.FabricConnection;
 import com.webank.wecross.stub.fabric2.FabricConnectionFactory;
-import com.webank.wecross.stub.fabric2.FabricCustomCommand.PackageChaincodeRequest;
 import com.webank.wecross.stub.fabric2.FabricStubConfigParser;
 import com.webank.wecross.stub.fabric2.FabricStubFactory;
 import com.webank.wecross.stub.fabric2.SystemChaincodeUtility;
-import com.webank.wecross.stub.fabric2.chaincode.ChaincodeHandler;
-
 import java.io.File;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-
 import org.hyperledger.fabric.sdk.*;
-import org.hyperledger.fabric.sdk.security.CryptoSuite;
 
 public class ProxyChaincodeDeployment {
 
@@ -107,351 +97,17 @@ public class ProxyChaincodeDeployment {
         String stubPath = "classpath:" + File.separator + chainPath;
         FabricConnection connection = FabricConnectionFactory.build(stubPath);
 
-        String[] args = new String[]{connection.getChannel().getName()};
+        String[] args = new String[] {connection.getChannel().getName()};
         SystemChaincodeUtility.deploy(
                 chainPath, SystemChaincodeUtility.Proxy, StubConstant.PROXY_NAME, args);
     }
 
-    /**
-     * @Description: 部署代理合约
-     * @params: [chainPath]
-     * @return: void @Author: mirsu @Date: 2020/10/30 11:00
-     */
-    public static void deploy2(String chainPath) throws Exception {
-        String stubPath = "classpath:" + File.separator + chainPath;
-
-        FabricStubConfigParser configFile = new FabricStubConfigParser(stubPath);
-        String version = String.valueOf(System.currentTimeMillis() / 1000);
-        FabricConnection connection = FabricConnectionFactory.build(stubPath);
-        connection.start();
-        // Check proxy chaincode
-        //if (connection.hasProxyDeployed2AllPeers()) {
-        if (false) {
-            System.out.println("SUCCESS: WeCrossProxy has been deployed to all connected org");
-        } else {
-            FabricStubFactory fabricStubFactory = new FabricStubFactory();
-            //            Driver driver = fabricStubFactory.newDriver();
-            //            BlockHeaderManager blockHeaderManager = new
-            // DirectBlockHeaderManager(driver, connection);
-            //            List<String> orgNames = new LinkedList<>();
-            //            String adminName = configFile.getFabricServices().getOrgUserName();
-            // admin 账户
-            //            Account admin = fabricStubFactory.newAccount( adminName,
-            // "classpath:accounts" + File.separator + adminName);
-            // 获取代理合约名称
-            String chaincodeName = StubConstant.PROXY_NAME;
-
-            // 通道名称
-            String channelName = configFile.getFabricServices().getChannelName();
-
-            long sequence = 2L;
-            String sourcePath =
-                    "conf"
-                            + File.separator
-                            + chainPath
-                            + File.separator
-                            + "chaincode"
-                            + File.separator
-                            + chaincodeName;
-            System.out.println("sourcePath------->" + sourcePath);
-            // 打包
-            String chaincodeLabel = chaincodeName + "_" + version;
-            LifecycleChaincodePackage chaincodePackage =
-                    packageChaincode(sourcePath, chaincodeName, chaincodeLabel);
-            String orgName;
-            Channel channel = connection.getChannel();
-            HFClient hfClient = connection.getHfClient();
-            for (Map.Entry<String, FabricStubConfigParser.Orgs.Org> orgEntry :
-                    configFile.getOrgs().entrySet()) {
-
-                String orgAdminName = orgEntry.getValue().getAdminName();
-
-
-                System.out.println("orgInfo   = " + orgEntry);
-                orgName = orgEntry.getKey();
-                System.out.println("orgName   = " + orgName);
-                System.out.println("hfClient   = " + hfClient.toString());
-                System.out.println("channel   = " + channel.toString());
-                Collection<Peer> peers = ChaincodeHandler.extractPeersFromChannel(channel, orgName);
-                System.out.println("peers   = " + peers.toString());
-                System.out.println("install chaincode to " + orgName + "  ...");
-                String packageId =
-                        ChaincodeHandler.installChaincode(
-                                orgAdminName, hfClient, channel, peers, chaincodePackage);
-                boolean queryInstalled =
-                        ChaincodeHandler.queryInstalled(orgAdminName, hfClient, peers, packageId, chaincodeLabel);
-                System.out.println(
-                        "install chaincode to "
-                                + orgName
-                                + " end, packageId = "
-                                + packageId
-                                + ", result = "
-                                + queryInstalled);
-
-                System.out.println("approve chaincode to " + orgName + "  ...");
-                CompletableFuture<BlockEvent.TransactionEvent> future =
-                        ChaincodeHandler.approveForMyOrg(
-                                orgAdminName,
-                                hfClient,
-                                channel,
-                                peers,
-                                sequence,
-                                chaincodeName,
-                                version,
-                                lccEndorsementPolicy,
-                                ccCollectionConfiguration,
-                                true,
-                                packageId);
-                BlockEvent.TransactionEvent event = future.get(60, TimeUnit.SECONDS);
-                System.out.println(
-                        "approve chaincode to " + orgName + " end, result = " + event.isValid());
-            }
-
-            for (Map.Entry<String, FabricStubConfigParser.Orgs.Org> orgEntry :
-                    configFile.getOrgs().entrySet()) {
-                System.out.println("orgInfo   = " + orgEntry);
-                orgName = orgEntry.getKey();
-                Collection<Peer> peers = ChaincodeHandler.extractPeersFromChannel(channel, orgName);
-
-                String orgAdminName = orgEntry.getValue().getAdminName();
-
-
-                System.out.println("commit chaincode to " + orgName + "  ...");
-                CompletableFuture<BlockEvent.TransactionEvent> future1 =
-                        ChaincodeHandler.commitChaincodeDefinition(
-                                orgAdminName,
-                                hfClient,
-                                channel,
-                                sequence,
-                                chaincodeName,
-                                version,
-                                lccEndorsementPolicy,
-                                ccCollectionConfiguration,
-                                true,
-                                peers);
-                BlockEvent.TransactionEvent event1 = future1.get(60, TimeUnit.SECONDS);
-                boolean queryCommitted =
-                        ChaincodeHandler.queryCommitted(
-                                orgAdminName,
-                                hfClient, channel, chaincodeName, peers, sequence, true);
-                System.out.println(
-                        "commit chaincode to "
-                                + orgName
-                                + " end, commitResult = "
-                                + event1.isValid()
-                                + ", queryCommitted = "
-                                + queryCommitted);
-            }
-            System.out.println("init chaincode to " + chaincodeName + "  ...");
-            CompletableFuture<BlockEvent.TransactionEvent> future =
-                    ChaincodeHandler.initChaincode(
-                            hfClient,
-                            hfClient.getUserContext(),
-                            channel,
-                            true,
-                            chaincodeName,
-                            version,
-                            TransactionRequest.Type.GO_LANG,
-                            new String[]{channelName});
-            BlockEvent.TransactionEvent event = future.get(60, TimeUnit.SECONDS);
-            System.out.println(
-                    "init chaincode to " + chaincodeName + " end, result = " + event.isValid());
-
-            System.out.println("SUCCESS: " + chaincodeName + " has been deployed to " + chainPath);
-        }
-    }
-
-    private static void initChaincode(
-            String channelName, FabricAccount account, String chaincodeName, String version)
-            throws Exception {
-        String language = "GO_LANG";
-        HFClient hfClient = HFClient.createNewInstance();
-        hfClient.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
-        hfClient.setUserContext(account.getUser());
-        Channel channel = hfClient.newChannel(channelName); // Cha
-        String[] args = new String[]{channelName};
-        boolean initRequired = true;
-        BlockEvent.TransactionEvent initEvent =
-                ChaincodeHandler.initChaincode(
-                        hfClient,
-                        account.getUser(),
-                        channel,
-                        initRequired,
-                        chaincodeName,
-                        version,
-                        FabricType.stringTochainCodeType(language),
-                        args)
-                        .get(60, TimeUnit.SECONDS); /**/
-        System.out.println(
-                "commit chaincode to -> "
-                        + " ,chaincodeName -> "
-                        + chaincodeName
-                        + " ,chaincodeVersion -> "
-                        + version
-                        + " ,args -> "
-                        + args
-                        + " , result -> "
-                        + initEvent.isValid()
-                        + "\n commit end");
-    }
-
-    private static LifecycleChaincodePackage packageChaincode(
-            String sourcePath, String chaincodeName, String chaincodeLabel) throws Exception {
-        System.out.println("Package " + chaincodeName + " ...");
-        String language = "GO_LANG";
-        PackageChaincodeRequest packageChaincodeRequest =
-                PackageChaincodeRequest.build()
-                        .setChaincodeName(chaincodeName)
-                        .setChaincodeLabel(chaincodeLabel)
-                        .setChaincodeType(language)
-                        .setChaincodePath("github.com")
-                        .setChaincodeMetaInfoPath(sourcePath)
-                        .setChaincodeSourcePath(sourcePath);
-        LifecycleChaincodePackage lifecycleChaincodePackage =
-                ChaincodeHandler.packageChaincode(packageChaincodeRequest);
-        System.out.println(
-                "Package success!!! lifecycleChaincodePackage"
-                        + lifecycleChaincodePackage.getPath());
-        return lifecycleChaincodePackage;
-    }
-
-
-    /*
-    private static void commitChaincodeDefinition(
-            FabricAccount account,
-            String channelName,
-            String orgName,
-            long sequence,
-            String chaincodeName,
-            String chaincodeVersion,
-            LifecycleChaincodeEndorsementPolicy lccEndorsementPolicy,
-            ChaincodeCollectionConfiguration ccCollectionConfiguration)
-            throws Exception {
-        HFClient hfClient = HFClient.createNewInstance();
-        hfClient.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
-        hfClient.setUserContext(account.getUser());
-        Channel channel = hfClient.newChannel(channelName); // ChannelName
-        Collection<Peer> peers = ChaincodeHandler.extractPeersFromChannel(channel, orgName);
-        boolean initRequired = true;
-        BlockEvent.TransactionEvent commitEvent =
-                ChaincodeHandler.commitChaincodeDefinition(
-                        hfClient,
-                        channel,
-                        sequence,
-                        chaincodeName,
-                        chaincodeVersion,
-                        lccEndorsementPolicy,
-                        ccCollectionConfiguration,
-                        initRequired,
-                        peers)
-                        .get(60, TimeUnit.SECONDS);
-        System.out.println(
-                "commit chaincode to -> "
-                        + orgName
-                        + " ,chaincodeName -> "
-                        + chaincodeName
-                        + " ,sequence -> "
-                        + sequence
-                        + " ,chaincodeVersion -> "
-                        + chaincodeVersion
-                        + " , result -> "
-                        + commitEvent.isValid()
-                        + "\n commit end");
-        boolean checkResult1 =
-                ChaincodeHandler.queryCommitted(
-                        hfClient, channel, chaincodeName, peers, sequence, initRequired);
-        System.out.println("////////////////// check commit result ///////////////" + checkResult1);
-    }
-
-    private static void approveForMyOrg(
-            FabricAccount account,
-            Channel channel,
-            String chaincodeName,
-            String orgName,
-            String version,
-            long sequence,
-            String packageId,
-            LifecycleChaincodeEndorsementPolicy lccEndorsementPolicy,
-            ChaincodeCollectionConfiguration ccCollectionConfiguration)
-            throws Exception {
-        HFClient hfClient = HFClient.createNewInstance();
-        hfClient.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
-        hfClient.setUserContext(account.getUser());
-        System.out.println("account：----》" + account.getUser());
-        //        Channel channel =  hfClient.newChannel(channelName); // ChannelName
-        Collection<Peer> peers = ChaincodeHandler.extractPeersFromChannel(channel, orgName);
-        boolean initRequired = true;
-        CompletableFuture<BlockEvent.TransactionEvent> future =
-                ChaincodeHandler.approveForMyOrg(
-                        hfClient,
-                        channel,
-                        peers,
-                        sequence,
-                        chaincodeName,
-                        version,
-                        lccEndorsementPolicy,
-                        ccCollectionConfiguration,
-                        initRequired,
-                        packageId);
-        BlockEvent.TransactionEvent event = future.get(60, TimeUnit.SECONDS);
-        System.out.println(
-                "approve chaincode to -> "
-                        + orgName
-                        + ", result -> "
-                        + event.isValid()
-                        + "\n approve end");
-    }
-
-
-        private static String installChaincode(
-                FabricAccount account,
-                LifecycleChaincodePackage chaincodePackage,
-                String channelName,
-                String orgName)
-                throws Exception {
-            System.out.println(
-                    "Install chaincode " + chaincodePackage.getLabel() + " to " + orgName + " ...");
-            HFClient hfClient = HFClient.createNewInstance();
-            hfClient.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
-            hfClient.setUserContext(account.getUser());
-            System.out.println("account.getUser()   " + account.getUser().getAccount());
-            System.out.println("account.getMspId()   " + account.getUser().getMspId());
-            System.out.println("account.getName()   " + account.getUser().getName());
-            System.out.println("account.getRoles()   " + account.getUser().getRoles());
-            System.out.println(
-                    "account.getEnrollment().getCert   :"
-                            + account.getUser().getEnrollment().getCert());
-            Channel channel = constructChannel(hfClient, channelName);
-            //        Channel channel =  hfClient.newChannel(channelName); // ChannelName
-            Collection<Peer> peers = ChaincodeHandler.extractPeersFromChannel(channel, orgName);
-            String packageId =
-                    ChaincodeHandler.installChaincode(hfClient, channel, peers, chaincodePackage);
-            System.out.println(
-                    "install chaincode to -> "
-                            + orgName
-                            + ", packageId -> "
-                            + packageId
-                            + "\n install end");
-            return packageId;
-        }
-
-
-        private static Channel constructChannel(HFClient hfClient, String channelName)
-                throws Exception {
-            Channel newChannel = hfClient.loadChannelFromConfig(channelName, networkConfig);
-            if (newChannel == null) {
-                throw new Exception("Channel " + channelName + " is not defined in the config file!");
-            }
-
-            return newChannel.initialize();
-        }
-    */
     public static void upgrade(String chainPath) throws Exception {
         String stubPath = "classpath:" + File.separator + chainPath;
         FabricConnection connection = FabricConnectionFactory.build(stubPath);
         connection.start();
 
-        String[] args = new String[]{connection.getChannel().getName()};
+        String[] args = new String[] {connection.getChannel().getName()};
         SystemChaincodeUtility.upgrade(chainPath, StubConstant.PROXY_NAME, args);
     }
 
@@ -513,9 +169,7 @@ public class ProxyChaincodeDeployment {
         }
     }
 
-    /**
-     * @Description: driver 与 connection 的组合类 @Author: mirsu @Date: 2020/10/30 11:20
-     */
+    /** @Description: driver 与 connection 的组合类 @Author: mirsu @Date: 2020/10/30 11:20 */
     public static class DirectBlockHeaderManager implements BlockManager {
         private Driver driver;
         private Connection connection;
@@ -526,12 +180,10 @@ public class ProxyChaincodeDeployment {
         }
 
         @Override
-        public void start() {
-        }
+        public void start() {}
 
         @Override
-        public void stop() {
-        }
+        public void stop() {}
 
         @Override
         public void asyncGetBlockNumber(GetBlockNumberCallback callback) {

@@ -1,7 +1,7 @@
 package com.webank.wecross.stub.fabric2.account;
 
-import com.webank.wecross.stub.fabric2.common.FabricType;
 import com.webank.wecross.stub.Account;
+import com.webank.wecross.stub.fabric2.common.FabricType;
 import org.hyperledger.fabric.sdk.User;
 import org.hyperledger.fabric.sdk.exception.CryptoException;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;

@@ -1,6 +1,5 @@
 package com.webank.wecross.stub.fabric2;
 
-import com.webank.wecross.stub.fabric2.account.FabricAccountFactory;
 import com.webank.wecross.stub.Account;
 import com.webank.wecross.stub.Connection;
 import com.webank.wecross.stub.Driver;
@@ -9,6 +8,7 @@ import com.webank.wecross.stub.StubFactory;
 import com.webank.wecross.stub.WeCrossContext;
 import com.webank.wecross.stub.fabric2.FabricCustomCommand.InstallCommand;
 import com.webank.wecross.stub.fabric2.FabricCustomCommand.InstantiateCommand;
+import com.webank.wecross.stub.fabric2.account.FabricAccountFactory;
 import com.webank.wecross.stub.fabric2.performance.PerformanceTest;
 import com.webank.wecross.stub.fabric2.performance.ProxyTest;
 import com.webank.wecross.stub.fabric2.proxy.ProxyChaincodeDeployment;

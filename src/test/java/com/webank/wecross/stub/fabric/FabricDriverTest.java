@@ -1,6 +1,5 @@
 package com.webank.wecross.stub.fabric;
 
-import com.webank.wecross.stub.fabric2.common.FabricType;
 import com.webank.wecross.stub.*;
 import com.webank.wecross.stub.fabric2.FabricBlock;
 import com.webank.wecross.stub.fabric2.FabricConnection;
@@ -11,6 +10,7 @@ import com.webank.wecross.stub.fabric2.FabricCustomCommand.InstantiateCommand;
 import com.webank.wecross.stub.fabric2.FabricCustomCommand.UpgradeCommand;
 import com.webank.wecross.stub.fabric2.FabricDriver;
 import com.webank.wecross.stub.fabric2.FabricStubFactory;
+import com.webank.wecross.stub.fabric2.common.FabricType;
 import com.webank.wecross.stub.fabric2.hub.HubChaincodeDeployment;
 import com.webank.wecross.stub.fabric2.proxy.ProxyChaincodeDeployment;
 import com.webank.wecross.stub.fabric2.utils.TarUtils;

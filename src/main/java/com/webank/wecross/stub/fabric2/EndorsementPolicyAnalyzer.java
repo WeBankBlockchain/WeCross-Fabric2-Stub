@@ -44,8 +44,12 @@ public class EndorsementPolicyAnalyzer {
                 && sameSuccessResponse();
     }
 
-    public boolean hasSuccess() {
+    public boolean hasSameSuccess() {
         return !successResponse.isEmpty() && samePayload() && sameSuccessResponse();
+    }
+
+    public boolean hasSuccess() {
+        return !successResponse.isEmpty();
     }
 
     public byte[] getPayload() {

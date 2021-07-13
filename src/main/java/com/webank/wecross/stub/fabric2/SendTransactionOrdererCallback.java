@@ -1,7 +1,7 @@
 package com.webank.wecross.stub.fabric2;
 
-import com.webank.wecross.stub.fabric2.common.FabricType;
 import com.webank.wecross.stub.Response;
+import com.webank.wecross.stub.fabric2.common.FabricType;
 import io.netty.util.Timeout;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;

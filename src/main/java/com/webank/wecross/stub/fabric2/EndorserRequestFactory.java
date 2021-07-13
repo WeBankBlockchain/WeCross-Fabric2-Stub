@@ -1,8 +1,6 @@
 package com.webank.wecross.stub.fabric2;
 
 import com.google.protobuf.ByteString;
-import com.webank.wecross.stub.fabric2.account.FabricAccount;
-import com.webank.wecross.stub.fabric2.common.FabricType;
 import com.webank.wecross.stub.Account;
 import com.webank.wecross.stub.Request;
 import com.webank.wecross.stub.ResourceInfo;
@@ -13,7 +11,10 @@ import com.webank.wecross.stub.fabric2.FabricCustomCommand.CommitChaincodeReques
 import com.webank.wecross.stub.fabric2.FabricCustomCommand.InstallChaincodeRequest;
 import com.webank.wecross.stub.fabric2.FabricCustomCommand.InstantiateChaincodeRequest;
 import com.webank.wecross.stub.fabric2.FabricCustomCommand.PackageChaincodeRequest;
+import com.webank.wecross.stub.fabric2.FabricCustomCommand.QueryCommittedRequest;
 import com.webank.wecross.stub.fabric2.FabricCustomCommand.UpgradeChaincodeRequest;
+import com.webank.wecross.stub.fabric2.account.FabricAccount;
+import com.webank.wecross.stub.fabric2.common.FabricType;
 import java.nio.charset.Charset;
 import java.util.LinkedList;
 import java.util.List;
@@ -34,6 +35,14 @@ public class EndorserRequestFactory {
     public static byte[] buildProposalRequestBytes(
             TransactionContext transactionContext, TransactionRequest transactionRequest)
             throws Exception {
+        return buildProposalRequestBytes(transactionContext, transactionRequest, false);
+    }
+
+    public static byte[] buildProposalRequestBytes(
+            TransactionContext transactionContext,
+            TransactionRequest transactionRequest,
+            boolean withInit)
+            throws Exception {
         if (!transactionContext.getAccount().getType().equals(FabricType.Account.FABRIC_ACCOUNT)) {
             throw new Exception(
                     "Illegal account type for fabric call: "
@@ -45,10 +54,32 @@ public class EndorserRequestFactory {
 
         // generate proposal
         ProposalPackage.Proposal proposal =
-                buildProposal(account, resourceInfo, transactionRequest);
+                buildProposal(account, resourceInfo, transactionRequest, withInit);
 
         byte[] signedProposalBytes = signProposal(account, proposal);
         return signedProposalBytes;
+    }
+
+    public static Request buildQueryCommittedProposalRequest(
+            TransactionContext transactionContext, QueryCommittedRequest request) throws Exception {
+        if (!transactionContext.getAccount().getType().equals(FabricType.Account.FABRIC_ACCOUNT)) {
+            throw new Exception(
+                    "Illegal account type for fabric call: "
+                            + transactionContext.getAccount().getType());
+        }
+
+        FabricAccount account = (FabricAccount) transactionContext.getAccount(); // Account
+
+        // generate proposal
+        ProposalPackage.Proposal proposal = buildQueryCommittedProposal(account, request);
+        byte[] signedProposalBytes = signProposal(account, proposal);
+
+        TransactionParams transactionParams =
+                new TransactionParams(new TransactionRequest(), signedProposalBytes, false);
+
+        Request endorserRequest = new Request();
+        endorserRequest.setData(transactionParams.toBytes());
+        return endorserRequest;
     }
 
     public static Request buildInstallProposalRequest(
@@ -194,7 +225,10 @@ public class EndorserRequestFactory {
     }
 
     private static ProposalPackage.Proposal buildProposal(
-            FabricAccount account, ResourceInfo resourceInfo, TransactionRequest transactionRequest)
+            FabricAccount account,
+            ResourceInfo resourceInfo,
+            TransactionRequest transactionRequest,
+            boolean withInit)
             throws Exception {
         // Generate transactionProposalRequest
         TransactionProposalRequest transactionProposalRequest =
@@ -218,6 +252,9 @@ public class EndorserRequestFactory {
         String[] paramterList = getParamterList(transactionRequest);
         transactionProposalRequest.setArgs(paramterList);
         // transactionProposalRequest.setProposalWaitTime(properties.getProposalWaitTime());
+        if (withInit) {
+            transactionProposalRequest.setInit(true);
+        }
 
         org.hyperledger.fabric.sdk.TransactionRequest proposalRequest = transactionProposalRequest;
 
@@ -233,6 +270,35 @@ public class EndorserRequestFactory {
         proposalBuilder.request(proposalRequest);
 
         ProposalPackage.Proposal proposal = proposalBuilder.build();
+        return proposal;
+    }
+
+    private static ProposalPackage.Proposal buildQueryCommittedProposal(
+            FabricAccount account, QueryCommittedRequest request) throws Exception {
+        request.check(); // check has all params
+
+        HFClient hfClient = HFClient.createNewInstance();
+        // 证书套件
+        hfClient.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
+        // 用户信息
+        hfClient.setUserContext(account.getUser());
+        // 通道
+        Channel channel = hfClient.newChannel(request.getChannelName()); // ChannelName
+
+        org.hyperledger.fabric.sdk.transaction.TransactionContext transactionContext =
+                new org.hyperledger.fabric.sdk.transaction.TransactionContext(
+                        channel, account.getUser(), CryptoSuite.Factory.getCryptoSuite());
+
+        transactionContext.verify(
+                false); // Install will have no signing cause it's not really targeted to a channel.
+
+        LifecycleQueryChaincodeDefinitionBuilder lifecycleQueryChaincodeDefinitionBuilder =
+                LifecycleQueryChaincodeDefinitionBuilder.newBuilder();
+        lifecycleQueryChaincodeDefinitionBuilder
+                .context(transactionContext)
+                .setChaincodeName(request.getName());
+
+        ProposalPackage.Proposal proposal = lifecycleQueryChaincodeDefinitionBuilder.build();
         return proposal;
     }
 
@@ -517,7 +583,7 @@ public class EndorserRequestFactory {
 
         // generate proposal
         ProposalPackage.Proposal proposal =
-                buildProposal(account, resourceInfo, transactionRequest);
+                buildProposal(account, resourceInfo, transactionRequest, false);
         return signProposal(account, proposal);
     }
 

@@ -1,10 +1,10 @@
 package com.webank.wecross.stub.fabric2;
 
 import com.google.protobuf.ByteString;
-import com.webank.wecross.stub.fabric2.account.FabricAccount;
-import com.webank.wecross.stub.fabric2.common.FabricType;
 import com.webank.wecross.stub.Account;
 import com.webank.wecross.stub.Request;
+import com.webank.wecross.stub.fabric2.account.FabricAccount;
+import com.webank.wecross.stub.fabric2.common.FabricType;
 import org.hyperledger.fabric.protos.common.Common;
 
 public class OrdererRequestFactory {

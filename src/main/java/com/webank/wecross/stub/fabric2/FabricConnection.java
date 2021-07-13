@@ -6,13 +6,13 @@ import static java.lang.String.format;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
-import com.webank.wecross.stub.fabric2.common.FabricType;
 import com.webank.wecross.stub.Connection;
 import com.webank.wecross.stub.Request;
 import com.webank.wecross.stub.ResourceInfo;
 import com.webank.wecross.stub.Response;
 import com.webank.wecross.stub.StubConstant;
 import com.webank.wecross.stub.fabric2.FabricCustomCommand.InstantiateChaincodeRequest;
+import com.webank.wecross.stub.fabric2.common.FabricType;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timer;
 import java.io.ByteArrayInputStream;
@@ -456,7 +456,7 @@ public class FabricConnection implements Connection {
             EndorsementPolicyAnalyzer analyzer = new EndorsementPolicyAnalyzer(proposalResponses);
 
             // if (analyzer.allSuccess()) { // All success endorsement policy, TODO: pull policy
-            if (analyzer.hasSuccess()) {
+            if (analyzer.hasSameSuccess()) {
                 // has success policy: for not all org has deploy a chiancode but WeCrossProxy has
                 // to be deployed to all org
 

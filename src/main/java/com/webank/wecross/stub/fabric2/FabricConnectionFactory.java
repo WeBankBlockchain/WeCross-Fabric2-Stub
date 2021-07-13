@@ -1,8 +1,8 @@
 package com.webank.wecross.stub.fabric2;
 
+import com.webank.wecross.stub.StubConstant;
 import com.webank.wecross.stub.fabric2.account.FabricAccountFactory;
 import com.webank.wecross.stub.fabric2.common.FabricType;
-import com.webank.wecross.stub.StubConstant;
 import java.io.File;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -61,8 +61,9 @@ public class FabricConnectionFactory {
                 Map<String, Peer> peersMap = buildPeersMap(hfClient, configFile);
                 Channel channel = buildChannel(hfClient, peersMap, configFile);
                 ThreadPoolTaskExecutor threadPool = buildThreadPool(configFile);
-                FabricConnection fabricConnection = new FabricConnection(
-                        hfClient, channel, peersMap, StubConstant.PROXY_NAME, threadPool);
+                FabricConnection fabricConnection =
+                        new FabricConnection(
+                                hfClient, channel, peersMap, StubConstant.PROXY_NAME, threadPool);
                 orgConnections.put(orgEntry.getKey(), fabricConnection);
             }
 
@@ -105,8 +106,7 @@ public class FabricConnectionFactory {
         return hfClient;
     }
 
-    public static HFClient buildClient(String orgUserName)
-            throws Exception {
+    public static HFClient buildClient(String orgUserName) throws Exception {
         HFClient hfClient = HFClient.createNewInstance();
         hfClient.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
 

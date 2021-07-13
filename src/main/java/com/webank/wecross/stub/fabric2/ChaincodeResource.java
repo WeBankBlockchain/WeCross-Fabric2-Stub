@@ -1,7 +1,7 @@
 package com.webank.wecross.stub.fabric2;
 
-import com.webank.wecross.stub.fabric2.common.FabricType;
 import com.webank.wecross.stub.ResourceInfo;
+import com.webank.wecross.stub.fabric2.common.FabricType;
 import com.webank.wecross.stub.fabric2.utils.HashUtils;
 import java.util.Collection;
 import java.util.HashSet;

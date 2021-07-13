@@ -4,8 +4,8 @@ import com.webank.wecross.stub.*;
 import com.webank.wecross.stub.fabric2.FabricCustomCommand.ApproveChaincodeRequest;
 import com.webank.wecross.stub.fabric2.FabricCustomCommand.CommitChaincodeRequest;
 import com.webank.wecross.stub.fabric2.FabricCustomCommand.InstallChaincodeRequest;
-import com.webank.wecross.stub.fabric2.FabricCustomCommand.InstantiateChaincodeRequest;
 import com.webank.wecross.stub.fabric2.FabricCustomCommand.PackageChaincodeRequest;
+import com.webank.wecross.stub.fabric2.FabricCustomCommand.QueryCommittedRequest;
 import com.webank.wecross.stub.fabric2.FabricCustomCommand.UpgradeChaincodeRequest;
 import com.webank.wecross.stub.fabric2.chaincode.ChaincodeHandler;
 import com.webank.wecross.stub.fabric2.utils.TarUtils;
@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import org.hyperledger.fabric.sdk.LifecycleChaincodePackage;
 
 public class SystemChaincodeUtility {
@@ -27,29 +28,43 @@ public class SystemChaincodeUtility {
 
         FabricStubConfigParser configFile = new FabricStubConfigParser(stubPath);
         String version = String.valueOf(System.currentTimeMillis() / 1000);
+        FabricConnection connection = FabricConnectionFactory.build(stubPath);
+        connection.start();
 
-        Map<String, FabricConnection> orgConnections = FabricConnectionFactory.buildOrgConnections(stubPath);
+        FabricStubFactory fabricStubFactory = new FabricStubFactory();
+        Driver driver = fabricStubFactory.newDriver();
+
+        BlockManager blockManager = new DirectBlockManager(driver, connection);
+
+        String adminName = configFile.getFabricServices().getOrgUserName();
+        Account admin =
+                fabricStubFactory.newAccount(
+                        adminName, "classpath:accounts" + File.separator + adminName);
 
         if (type == Proxy) {
-             /*
-            if (connection.hasProxyDeployed2AllPeers()) {
-                System.out.println("SUCCESS: WeCrossProxy has been deployed to all connected org");
-                return;
-            }
+            /*
+                       if (connection.hasProxyDeployed2AllPeers()) {
+                           System.out.println("SUCCESS: WeCrossProxy has been deployed to all connected org");
+                           return;
+                       }
 
-            } else if (type == Hub) {
-                if (connection.hasHubDeployed2AllPeers()) {
-                    System.out.println("SUCCESS: WeCrossHub has been deployed to all connected org");
-                    return;
-                }*/
+                   } else if (type == Hub) {
+                       if (connection.hasHubDeployed2AllPeers()) {
+                           System.out.println("SUCCESS: WeCrossHub has been deployed to all connected org");
+                           return;
+                       }
+
+            */
         } else {
             System.out.println("ERROR: type " + type + " not supported");
             return;
         }
 
-
         String packageId = null;
-        long sequence = 3L;
+        long sequence =
+                queryCommittedChaincodeSequenceByName(
+                                connection, driver, admin, blockManager, chaincodeName)
+                        + 1;
 
         // package
         String sourcePath =
@@ -66,17 +81,18 @@ public class SystemChaincodeUtility {
                 packageChaincode(sourcePath, chaincodeName, chaincodeLabel, "GO_LANG");
         byte[] code = chaincodePackage.getAsBytes();
 
+        Map<String, FabricConnection> orgConnections =
+                FabricConnectionFactory.buildOrgConnections(stubPath);
         for (Map.Entry<String, FabricStubConfigParser.Orgs.Org> orgEntry :
                 configFile.getOrgs().entrySet()) {
             String orgName = orgEntry.getKey();
             String accountName = orgEntry.getValue().getAdminName();
 
-            FabricConnection connection = orgConnections.get(orgName);
-            connection.start();
+            FabricConnection orgConnection = orgConnections.get(orgName);
+            orgConnection.start();
 
-            FabricStubFactory fabricStubFactory = new FabricStubFactory();
-            Driver driver = fabricStubFactory.newDriver();
-            BlockManager blockManager = new DirectBlockManager(driver, connection);
+            Driver orgDriver = fabricStubFactory.newDriver();
+            BlockManager orgBlockManager = new DirectBlockManager(orgDriver, orgConnection);
 
             Account orgAdmin =
                     fabricStubFactory.newAccount(
@@ -86,10 +102,10 @@ public class SystemChaincodeUtility {
             String currentPackageId =
                     install(
                             orgName,
-                            connection,
-                            driver,
+                            orgConnection,
+                            orgDriver,
                             orgAdmin,
-                            blockManager,
+                            orgBlockManager,
                             chaincodeName,
                             code,
                             version);
@@ -102,33 +118,23 @@ public class SystemChaincodeUtility {
             // approve
             approveForMyOrg(
                     orgName,
-                    connection,
-                    driver,
+                    orgConnection,
+                    orgDriver,
                     orgAdmin,
-                    blockManager,
+                    orgBlockManager,
                     chaincodeName,
                     version,
                     sequence,
                     packageId);
         }
 
-        FabricConnection connection = FabricConnectionFactory.build(stubPath);
-        connection.start();
-        FabricStubFactory fabricStubFactory = new FabricStubFactory();
-        Driver driver = fabricStubFactory.newDriver();
-        BlockManager blockManager = new DirectBlockManager(driver, connection);
         List<String> orgNames = new LinkedList<>();
-        String adminName = configFile.getFabricServices().getOrgUserName();
-        Account admin =
-                fabricStubFactory.newAccount(
-                        adminName, "classpath:accounts" + File.separator + adminName);
 
         for (Map.Entry<String, FabricStubConfigParser.Orgs.Org> orgEntry :
                 configFile.getOrgs().entrySet()) {
             String orgName = orgEntry.getKey();
             orgNames.add(orgName);
         }
-
 
         // commit
         commitChaincodeDefinition(
@@ -141,6 +147,10 @@ public class SystemChaincodeUtility {
                 version,
                 sequence,
                 packageId);
+
+        // init
+        initChaincode(
+                orgNames, connection, driver, admin, blockManager, chaincodeName, version, args);
 
         System.out.println("SUCCESS: " + chaincodeName + " has been deployed to " + chainPath);
     }
@@ -194,6 +204,72 @@ public class SystemChaincodeUtility {
         }
         upgrade(orgNames, connection, driver, admin, blockManager, chaincodeName, args, version);
         System.out.println("SUCCESS: " + chaincodeName + " has been upgraded to " + chainPath);
+    }
+
+    private static long queryCommittedChaincodeSequenceByName(
+            FabricConnection connection,
+            Driver driver,
+            Account user,
+            BlockManager blockManager,
+            String chaincodeName)
+            throws Exception {
+        System.out.println("Query committed chaincode " + chaincodeName + " ...");
+
+        String channelName = connection.getChannel().getName();
+
+        QueryCommittedRequest request = new QueryCommittedRequest();
+        request.setName(chaincodeName);
+        request.setChannelName(channelName);
+
+        List<ResourceInfo> resourceInfos = connection.getResources();
+
+        if (resourceInfos == null || resourceInfos.isEmpty()) {
+            return 0;
+        }
+
+        ResourceInfo resourceInfo =
+                resourceInfos
+                        .stream()
+                        .filter(
+                                new Predicate<ResourceInfo>() {
+                                    @Override
+                                    public boolean test(ResourceInfo resourceInfo) {
+                                        return resourceInfo.getName().equals(chaincodeName);
+                                    }
+                                })
+                        .findFirst()
+                        .get();
+
+        TransactionContext transactionContext =
+                new TransactionContext(user, null, resourceInfo, blockManager);
+
+        CompletableFuture<TransactionResponse> future1 = new CompletableFuture<>();
+        CompletableFuture<TransactionException> future2 = new CompletableFuture<>();
+
+        ((FabricDriver) driver)
+                .asyncQueryCommittedChaincode(
+                        transactionContext,
+                        request,
+                        connection,
+                        (transactionException, transactionResponse) -> {
+                            future1.complete(transactionResponse);
+                            future2.complete(transactionException);
+                        });
+
+        TransactionResponse transactionResponse = future1.get(80, TimeUnit.SECONDS);
+        TransactionException transactionException = future2.get(80, TimeUnit.SECONDS);
+        if (!transactionException.isSuccess()) {
+            return 0;
+        } else {
+            String sequenceStr = transactionResponse.getResult()[0];
+            Long sequence = new Long(sequenceStr);
+            System.out.println(
+                    "Query committed chaincode success, "
+                            + chaincodeName
+                            + " sequence:"
+                            + sequence);
+            return sequence;
+        }
     }
 
     private static String install(
@@ -345,53 +421,60 @@ public class SystemChaincodeUtility {
                 "Commit success, " + chaincodeName + ":" + version + " to " + orgNames + " ...");
     }
 
-    private static void instantiate(
+    private static void initChaincode(
             List<String> orgNames,
             FabricConnection connection,
             Driver driver,
             Account user,
             BlockManager blockManager,
             String chaincodeName,
-            String[] args,
-            String version)
+            String version,
+            String[] args)
             throws Exception {
-        System.out.println(
-                "Instantiating "
-                        + chaincodeName
-                        + ":"
-                        + version
-                        + " to "
-                        + orgNames.toString()
-                        + " ...");
-        String channelName = connection.getChannel().getName();
-        String language = "GO_LANG";
 
-        InstantiateChaincodeRequest instantiateChaincodeRequest =
-                InstantiateChaincodeRequest.build()
-                        .setName(chaincodeName)
-                        .setVersion(version)
-                        .setOrgNames(orgNames.toArray(new String[] {}))
-                        .setChannelName(channelName)
-                        .setChaincodeLanguage(language)
-                        .setEndorsementPolicy("") // "OR ('Org1MSP.peer','Org2MSP.peer')"
-                        .setArgs(args);
+        System.out.println("Init " + chaincodeName + ":" + version + " to " + orgNames + " ...");
+
+        String channelName = connection.getChannel().getName();
+
+        TransactionRequest request = new TransactionRequest();
+        request.setMethod("init");
+        request.setArgs(args);
+
+        List<ResourceInfo> resourceInfos = connection.getResources();
+        if (resourceInfos == null || resourceInfos.isEmpty()) {
+            throw new Exception("Chaincode " + chaincodeName + " not found");
+        }
+        ResourceInfo resourceInfo =
+                resourceInfos
+                        .stream()
+                        .filter(
+                                new Predicate<ResourceInfo>() {
+                                    @Override
+                                    public boolean test(ResourceInfo resourceInfo) {
+                                        return resourceInfo.getName().equals(chaincodeName);
+                                    }
+                                })
+                        .findFirst()
+                        .get();
 
         TransactionContext transactionContext =
-                new TransactionContext(user, null, null, blockManager);
+                new TransactionContext(user, null, resourceInfo, blockManager);
 
-        CompletableFuture<TransactionException> future2 = new CompletableFuture<>();
+        CompletableFuture<TransactionException> future = new CompletableFuture<>();
         ((FabricDriver) driver)
-                .asyncInstantiateChaincode(
+                .asyncInitChaincode(
                         transactionContext,
-                        instantiateChaincodeRequest,
+                        request,
                         connection,
                         (transactionException, transactionResponse) ->
-                                future2.complete(transactionException));
+                                future.complete(transactionException));
 
-        TransactionException e2 = future2.get(180, TimeUnit.SECONDS);
-        if (!e2.isSuccess()) {
-            throw new Exception("ERROR: asyncCustomCommand instantiate error: " + e2.getMessage());
+        TransactionException transactionException = future.get(180, TimeUnit.SECONDS);
+        if (!transactionException.isSuccess()) {
+            throw new Exception("Init chaincode error: " + transactionException.getMessage());
         }
+        System.out.println(
+                "Init success, " + chaincodeName + ":" + version + " to " + orgNames + " ...");
     }
 
     private static void upgrade(
