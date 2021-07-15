@@ -11,7 +11,7 @@ import java.io.IOException;
  * All rights Reserved, Designed By www.webank.com
  *
  * @version V1.0 @Title: PackageChaincodeRequest.java @Package
- *     com.webank.wecross.stub.fabric.FabricCustomCommand @Description: 链码打包请求体
+ *     com.webank.wecross.stub.fabric2.FabricCustomCommand @Description: 链码打包请求体
  * @author: mirsu
  * @date: 2020/11/3 10:58 @Copyright: 2020-2020/11/3 www.tbs.com Inc. All rights reserved.
  *     <p>peer lifecycle chaincode package ./channel-artifacts/basic_02.tar.gz --path
@@ -150,9 +150,7 @@ public class PackageChaincodeRequest implements ChaincodeRequest {
         if (this.chaincodeType == null) {
             throw new Exception("chaincodeType not set");
         }
-        if (this.chaincodeMetaInfoPath == null) {
-            throw new Exception("chaincodeMetainfoPath not set");
-        }
+
         if (this.chaincodeSourcePath == null) {
             throw new Exception("chaincodeSourcePath not set");
         }

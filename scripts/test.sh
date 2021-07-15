@@ -1,1 +1,0 @@
-java -cp 'conf;apps/*' com.webank.wecross.FabricStub

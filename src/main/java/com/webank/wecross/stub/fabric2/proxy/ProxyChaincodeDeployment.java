@@ -108,7 +108,8 @@ public class ProxyChaincodeDeployment {
         connection.start();
 
         String[] args = new String[] {connection.getChannel().getName()};
-        SystemChaincodeUtility.upgrade(chainPath, StubConstant.PROXY_NAME, args);
+        SystemChaincodeUtility.upgrade(
+                chainPath, SystemChaincodeUtility.Proxy, StubConstant.PROXY_NAME, args);
     }
 
     public static boolean hasInstantiate(String chainPath) throws Exception {

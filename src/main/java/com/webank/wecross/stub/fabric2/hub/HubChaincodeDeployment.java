@@ -79,7 +79,8 @@ public class HubChaincodeDeployment {
         connection.start();
 
         String[] args = new String[] {connection.getChannel().getName()};
-        SystemChaincodeUtility.upgrade(chainPath, StubConstant.HUB_NAME, args);
+        SystemChaincodeUtility.upgrade(
+                chainPath, SystemChaincodeUtility.Hub, StubConstant.HUB_NAME, args);
     }
 
     public static boolean hasInstantiate(String chainPath) throws Exception {

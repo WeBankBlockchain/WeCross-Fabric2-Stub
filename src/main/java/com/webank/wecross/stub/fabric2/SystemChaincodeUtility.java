@@ -8,7 +8,6 @@ import com.webank.wecross.stub.fabric2.FabricCustomCommand.PackageChaincodeReque
 import com.webank.wecross.stub.fabric2.FabricCustomCommand.QueryCommittedRequest;
 import com.webank.wecross.stub.fabric2.FabricCustomCommand.UpgradeChaincodeRequest;
 import com.webank.wecross.stub.fabric2.chaincode.ChaincodeHandler;
-import com.webank.wecross.stub.fabric2.utils.TarUtils;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
@@ -23,6 +22,21 @@ public class SystemChaincodeUtility {
     public static final int Hub = 1;
 
     public static void deploy(String chainPath, int type, String chaincodeName, String[] args)
+            throws Exception {
+        deploy(chainPath, type, chaincodeName, args, false);
+    }
+
+    public static void upgrade(String chainPath, int type, String chaincodeName, String[] args)
+            throws Exception {
+        deploy(chainPath, type, chaincodeName, args, true);
+    }
+
+    private static void deploy(
+            String chainPath,
+            int type,
+            String chaincodeName,
+            String[] args,
+            boolean ignoreHasDeployed)
             throws Exception {
         String stubPath = "classpath:" + File.separator + chainPath;
 
@@ -42,19 +56,16 @@ public class SystemChaincodeUtility {
                         adminName, "classpath:accounts" + File.separator + adminName);
 
         if (type == Proxy) {
-            /*
-                       if (connection.hasProxyDeployed2AllPeers()) {
-                           System.out.println("SUCCESS: WeCrossProxy has been deployed to all connected org");
-                           return;
-                       }
+            if (!ignoreHasDeployed && connection.hasProxyDeployed2AllPeers()) {
+                System.out.println("SUCCESS: WeCrossProxy has been deployed to all connected org");
+                return;
+            }
+        } else if (type == Hub) {
+            if (!ignoreHasDeployed && connection.hasHubDeployed2AllPeers()) {
+                System.out.println("SUCCESS: WeCrossHub has been deployed to all connected org");
+                return;
+            }
 
-                   } else if (type == Hub) {
-                       if (connection.hasHubDeployed2AllPeers()) {
-                           System.out.println("SUCCESS: WeCrossHub has been deployed to all connected org");
-                           return;
-                       }
-
-            */
         } else {
             System.out.println("ERROR: type " + type + " not supported");
             return;
@@ -155,57 +166,6 @@ public class SystemChaincodeUtility {
         System.out.println("SUCCESS: " + chaincodeName + " has been deployed to " + chainPath);
     }
 
-    public static void upgrade(String chainPath, String chaincodeName, String[] args)
-            throws Exception {
-        String stubPath = "classpath:" + File.separator + chainPath;
-
-        FabricStubConfigParser configFile = new FabricStubConfigParser(stubPath);
-        String version = String.valueOf(System.currentTimeMillis() / 1000);
-        FabricConnection connection = FabricConnectionFactory.build(stubPath);
-        connection.start();
-
-        FabricStubFactory fabricStubFactory = new FabricStubFactory();
-        Driver driver = fabricStubFactory.newDriver();
-        BlockManager blockManager = new DirectBlockManager(driver, connection);
-        List<String> orgNames = new LinkedList<>();
-        String adminName = configFile.getFabricServices().getOrgUserName();
-        Account admin =
-                fabricStubFactory.newAccount(
-                        adminName, "classpath:accounts" + File.separator + adminName);
-
-        for (Map.Entry<String, FabricStubConfigParser.Orgs.Org> orgEntry :
-                configFile.getOrgs().entrySet()) {
-            String orgName = orgEntry.getKey();
-            orgNames.add(orgName);
-            String accountName = orgEntry.getValue().getAdminName();
-
-            Account orgAdmin =
-                    fabricStubFactory.newAccount(
-                            accountName, "classpath:accounts" + File.separator + accountName);
-
-            String chaincodeFilesDir =
-                    "classpath:"
-                            + chainPath
-                            + File.separator
-                            + "chaincode/"
-                            + chaincodeName
-                            + File.separator;
-            byte[] code = TarUtils.generateTarGzInputStreamBytesFoGoChaincode(chaincodeFilesDir);
-            String packageId =
-                    install(
-                            orgName,
-                            connection,
-                            driver,
-                            orgAdmin,
-                            blockManager,
-                            chaincodeName,
-                            code,
-                            version);
-        }
-        upgrade(orgNames, connection, driver, admin, blockManager, chaincodeName, args, version);
-        System.out.println("SUCCESS: " + chaincodeName + " has been upgraded to " + chainPath);
-    }
-
     private static long queryCommittedChaincodeSequenceByName(
             FabricConnection connection,
             Driver driver,
@@ -221,24 +181,30 @@ public class SystemChaincodeUtility {
         request.setName(chaincodeName);
         request.setChannelName(channelName);
 
-        List<ResourceInfo> resourceInfos = connection.getResources();
+        List<ResourceInfo> resourceInfos = connection.getResources(true);
 
         if (resourceInfos == null || resourceInfos.isEmpty()) {
             return 0;
         }
 
-        ResourceInfo resourceInfo =
-                resourceInfos
-                        .stream()
-                        .filter(
-                                new Predicate<ResourceInfo>() {
-                                    @Override
-                                    public boolean test(ResourceInfo resourceInfo) {
-                                        return resourceInfo.getName().equals(chaincodeName);
-                                    }
-                                })
-                        .findFirst()
-                        .get();
+        ResourceInfo resourceInfo = null;
+
+        try {
+            resourceInfo =
+                    resourceInfos
+                            .stream()
+                            .filter(
+                                    new Predicate<ResourceInfo>() {
+                                        @Override
+                                        public boolean test(ResourceInfo resourceInfo) {
+                                            return resourceInfo.getName().equals(chaincodeName);
+                                        }
+                                    })
+                            .findFirst()
+                            .get();
+        } catch (Exception e) {
+            return 0;
+        }
 
         TransactionContext transactionContext =
                 new TransactionContext(user, null, resourceInfo, blockManager);
@@ -440,22 +406,28 @@ public class SystemChaincodeUtility {
         request.setMethod("init");
         request.setArgs(args);
 
-        List<ResourceInfo> resourceInfos = connection.getResources();
+        List<ResourceInfo> resourceInfos = connection.getResources(true);
         if (resourceInfos == null || resourceInfos.isEmpty()) {
             throw new Exception("Chaincode " + chaincodeName + " not found");
         }
-        ResourceInfo resourceInfo =
-                resourceInfos
-                        .stream()
-                        .filter(
-                                new Predicate<ResourceInfo>() {
-                                    @Override
-                                    public boolean test(ResourceInfo resourceInfo) {
-                                        return resourceInfo.getName().equals(chaincodeName);
-                                    }
-                                })
-                        .findFirst()
-                        .get();
+        ResourceInfo resourceInfo = null;
+
+        try {
+            resourceInfo =
+                    resourceInfos
+                            .stream()
+                            .filter(
+                                    new Predicate<ResourceInfo>() {
+                                        @Override
+                                        public boolean test(ResourceInfo resourceInfo) {
+                                            return resourceInfo.getName().equals(chaincodeName);
+                                        }
+                                    })
+                            .findFirst()
+                            .get();
+        } catch (Exception e) {
+            throw new Exception("Chaincode " + chaincodeName + " not found");
+        }
 
         TransactionContext transactionContext =
                 new TransactionContext(user, null, resourceInfo, blockManager);
@@ -559,12 +531,12 @@ public class SystemChaincodeUtility {
                         .setChaincodeLabel(chaincodeLabel)
                         .setChaincodeType(language)
                         .setChaincodePath("github.com")
-                        .setChaincodeMetaInfoPath(sourcePath)
+                        .setChaincodeMetaInfoPath(null)
                         .setChaincodeSourcePath(sourcePath);
         LifecycleChaincodePackage lifecycleChaincodePackage =
                 ChaincodeHandler.packageChaincode(packageChaincodeRequest);
         System.out.println(
-                "Package success!!! lifecycleChaincodePackage"
+                "Package success! lifecycleChaincodePackage "
                         + lifecycleChaincodePackage.getPath());
         return lifecycleChaincodePackage;
     }

@@ -27,7 +27,7 @@ public class FabricConnectionFactory {
      * @Description: 构建fabric链接
      *
      * @params: [path]
-     * @return: com.webank.wecross.stub.fabric.FabricConnection @Author: mirsu @Date: 2020/10/30
+     * @return: com.webank.wecross.stub.fabric2.FabricConnection @Author: mirsu @Date: 2020/10/30
      *     11:02
      */
     public static FabricConnection build(String path) {

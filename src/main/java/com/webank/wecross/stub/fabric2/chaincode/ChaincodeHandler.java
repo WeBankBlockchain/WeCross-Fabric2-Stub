@@ -17,7 +17,7 @@ import org.springframework.util.StringUtils;
 
 /**
  * @version V1.0 @Title: ChaincodeHandler.java @Package
- *     com.webank.wecross.stub.fabric.chaincode @Description: 链码操作类
+ *     com.webank.wecross.stub.fabric2.chaincode @Description: 链码操作类
  * @author: mirsu
  * @date: 2020/11/3 13:57
  */
@@ -28,11 +28,9 @@ public class ChaincodeHandler {
     private ChaincodeHandler() {}
 
     /**
-     * @Description: 打包链码
-     *
+     * @param request @Description: 打包链码
      * @params: [request]
      * @return: LifecycleChaincodePackage @Author: mirsu @Date: 2020/11/3 14:41
-     * @param request
      */
     public static LifecycleChaincodePackage packageChaincode(PackageChaincodeRequest request)
             throws TransactionException {
@@ -46,7 +44,9 @@ public class ChaincodeHandler {
                             Paths.get(request.getChaincodeSourcePath()),
                             FabricType.stringTochainCodeType(request.getChaincodeType()),
                             ccPath,
-                            Paths.get(request.getChaincodeMetaInfoPath()));
+                            request.getChaincodeMetaInfoPath() != null
+                                    ? Paths.get(request.getChaincodeMetaInfoPath())
+                                    : null);
         } catch (Exception e) {
             String errorMessage = "Fabric driver package exception: " + e;
             logger.error(errorMessage);
@@ -54,6 +54,7 @@ public class ChaincodeHandler {
         }
         return lifecycleChaincodePackage;
     }
+
     /**
      * @Description: 安装链码2.0（以组织为维度）
      *

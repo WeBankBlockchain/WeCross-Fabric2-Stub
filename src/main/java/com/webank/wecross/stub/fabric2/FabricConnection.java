@@ -146,6 +146,14 @@ public class FabricConnection implements Connection {
         return chaincodeResourceManager.getResourceInfoList(false);
     }
 
+    public List<ResourceInfo> getResources(boolean updateBeforeGet) {
+        if (updateBeforeGet) {
+            chaincodeResourceManager.updateChaincodeMap();
+        }
+
+        return chaincodeResourceManager.getResourceInfoList(false);
+    }
+
     public static class Properties {
         private String channelName;
         private String blockVerifierString;
@@ -986,6 +994,22 @@ public class FabricConnection implements Connection {
         peerOrgNames.removeAll(resourceOrgNames);
         if (!peerOrgNames.isEmpty()) {
             String errorMsg = "WeCrossProxy has not been deployed to: " + peerOrgNames.toString();
+            System.out.println(errorMsg);
+            logger.info(errorMsg);
+            return false;
+        }
+        return true;
+    }
+
+    public boolean hasHubDeployed2AllPeers() throws Exception {
+        Set<String> peerOrgNames = getAllPeerOrgNames();
+        Set<String> resourceOrgNames = getHubOrgNames(true);
+
+        logger.info("peerOrgNames: {}, resourceOrgNames: {}", peerOrgNames, resourceOrgNames);
+
+        peerOrgNames.removeAll(resourceOrgNames);
+        if (!peerOrgNames.isEmpty()) {
+            String errorMsg = "WeCrossHub has not been deployed to: " + peerOrgNames.toString();
             System.out.println(errorMsg);
             logger.info(errorMsg);
             return false;
