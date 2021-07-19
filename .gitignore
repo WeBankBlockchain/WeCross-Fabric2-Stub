@@ -51,3 +51,4 @@ demo/
 *_sk
 /src/test/resources/chains/fabric2/chaincode/WeCrossProxy/
 conf/*
+**/resources/**/vendor/**

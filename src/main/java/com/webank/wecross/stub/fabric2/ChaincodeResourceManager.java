@@ -159,7 +159,24 @@ public class ChaincodeResourceManager {
 
     private Map<String, String> queryActiveChaincode() {
         Map<String, String> name2Version = new HashMap<>();
-        Collection<Peer> peers = peersMap.values();
+
+        Collection<Peer> peers = new HashSet<>();
+
+        // Only query peers with same mspID as for orderer
+        String mspID =
+                channel.getOrderers()
+                        .stream()
+                        .findFirst()
+                        .get()
+                        .getProperties()
+                        .getProperty(FabricType.ORG_MSP_DEF);
+        for (Peer peer : peersMap.values()) {
+            String mspIDOfPeer = peer.getProperties().getProperty(FabricType.ORG_MSP_DEF);
+            if (mspID != null && mspID.equals(mspIDOfPeer)) {
+                peers.add(peer);
+            }
+        }
+
         try {
             LifecycleQueryInstalledChaincodesRequest request =
                     hfClient.newLifecycleQueryInstalledChaincodesRequest();
@@ -177,8 +194,7 @@ public class ChaincodeResourceManager {
                                 .LifecycleQueryInstalledChaincodesResult
                         result : results) {
                     String label = result.getLabel();
-                    String[] split = label.split("_");
-                    String chaincodeName = split[0];
+                    String chaincodeName = getChaincodeNameFromLabel(label);
                     queryLifecycleQueryChaincodeDefinitionRequest.setChaincodeName(chaincodeName);
                     Collection<LifecycleQueryChaincodeDefinitionProposalResponse> responses2 =
                             channel.lifecycleQueryChaincodeDefinition(
@@ -226,6 +242,14 @@ public class ChaincodeResourceManager {
         */
         logger.debug("queryActiveChaincode: " + name2Version.toString());
         return name2Version;
+    }
+
+    private String getChaincodeNameFromLabel(String label) {
+        // label: my_sacc_1122.2134
+        // name: sacc
+
+        int last = label.lastIndexOf("_");
+        return label.substring(0, last);
     }
 
     public void dumpChaincodeMap() {

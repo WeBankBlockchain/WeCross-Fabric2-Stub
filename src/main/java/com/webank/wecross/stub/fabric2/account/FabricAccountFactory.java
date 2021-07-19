@@ -214,6 +214,15 @@ public class FabricAccountFactory {
         };
     }
 
+    public static String getMspID(String name, String accountPath) throws Exception {
+        String accountConfigFile = accountPath + File.separator + "account.toml";
+
+        Map<String, String> accountConfig =
+                (Map<String, String>) FabricUtils.readTomlMap(accountConfigFile).get("account");
+
+        return accountConfig.get("mspid");
+    }
+
     public static Enrollment buildEnrollment(String accountPath) throws Exception {
         String accountConfigFile = accountPath + File.separator + "account.toml";
         Map<String, String> accountConfig =
