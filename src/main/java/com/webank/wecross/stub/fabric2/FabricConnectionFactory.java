@@ -136,7 +136,14 @@ public class FabricConnectionFactory {
                 String name = "peer-" + String.valueOf(index);
                 peersMap.put(
                         name,
-                        buildPeer(client, peerAddress, org.getTlsCaFile(), orgName, index, mspID));
+                        buildPeer(
+                                client,
+                                peerAddress,
+                                org.getTlsCaFile(),
+                                orgName,
+                                index,
+                                org.getHostnameOverride(),
+                                mspID));
                 index++;
             }
         }
@@ -158,7 +165,14 @@ public class FabricConnectionFactory {
             String name = "peer-" + String.valueOf(index);
             peersMap.put(
                     name,
-                    buildPeer(client, peerAddress, org.getTlsCaFile(), orgName, index, mspID));
+                    buildPeer(
+                            client,
+                            peerAddress,
+                            org.getTlsCaFile(),
+                            orgName,
+                            index,
+                            org.getHostnameOverride(),
+                            mspID));
             index++;
         }
         return peersMap;
@@ -200,7 +214,9 @@ public class FabricConnectionFactory {
         orderer1Prop.setProperty("sslProvider", "JDK");
         orderer1Prop.setProperty("negotiationType", "TLS");
         orderer1Prop.setProperty("ordererWaitTimeMilliSecs", "300000");
-        orderer1Prop.setProperty("hostnameOverride", "orderer");
+        orderer1Prop.setProperty(
+                "hostnameOverride",
+                fabricStubConfigParser.getFabricServices().getHostnameOverride());
         orderer1Prop.setProperty("trustServerCertificate", "true");
         orderer1Prop.setProperty("allowAllHostNames", "true");
         orderer1Prop.setProperty(
@@ -219,6 +235,7 @@ public class FabricConnectionFactory {
             String tlsCaFile,
             String orgName,
             Integer index,
+            String hostnameOverride,
             String mspID)
             throws InvalidArgumentException {
         Properties peer0Prop = new Properties();
@@ -226,7 +243,7 @@ public class FabricConnectionFactory {
         // peer0Prop.setProperty("sslProvider", "openSSL");
         peer0Prop.setProperty("sslProvider", "JDK");
         peer0Prop.setProperty("negotiationType", "TLS");
-        peer0Prop.setProperty("hostnameOverride", "peer0");
+        peer0Prop.setProperty("hostnameOverride", hostnameOverride);
         peer0Prop.setProperty("trustServerCertificate", "true");
         peer0Prop.setProperty("allowAllHostNames", "true");
         peer0Prop.setProperty(
