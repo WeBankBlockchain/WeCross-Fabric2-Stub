@@ -159,6 +159,28 @@ public class SystemChaincodeUtility {
                 sequence,
                 packageId);
 
+        // waiting for chaincode booting up
+        int tryTimes = 0;
+        if (type == Proxy) {
+            System.out.println("Waiting for WeCrossProxy chaincode booting up..");
+            do {
+                System.out.print(".");
+                Thread.sleep(10000);
+                tryTimes++;
+            } while (!connection.hasProxyDeployed2AllPeers() && tryTimes < 3);
+        } else if (type == Hub) {
+            System.out.println("Waiting for WeCrossHub chaincode booting up..");
+            do {
+                System.out.print(".");
+                Thread.sleep(10000);
+                tryTimes++;
+            } while (!connection.hasHubDeployed2AllPeers() && tryTimes < 3);
+
+        } else {
+            System.out.println("ERROR: type " + type + " not supported");
+            return;
+        }
+
         // init
         initChaincode(
                 orgNames, connection, driver, admin, blockManager, chaincodeName, version, args);
