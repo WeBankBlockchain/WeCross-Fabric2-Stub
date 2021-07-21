@@ -1,8 +1,14 @@
 #!/bin/bash
-cd fabric-samples-1.4.4/first-network
-bash byfn.sh down <<EOF
+samples_version=2.3.0
+samples_dir=fabric-samples-${samples_version}/test-network
+if [ -d ${samples_dir} ]; then
+    cd ${samples_dir}
+    bash network.sh down <<EOF
 Y
 EOF
-cd -
+    cd -
+fi
 
-rm fabric-samples-1.4.4 config bin certs -rf
+sleep 10 # waiting for container exit
+
+rm -rf fabric-samples-${samples_version} config bin certs

@@ -55,11 +55,11 @@ public class ProxyChaincodeTest {
 
         deployProxyChaincode();
         // deployHubChaincode();
-        deployTestChaincode();
+        // deployTestChaincode();
 
         resourceInfo = new ResourceInfo();
         for (ResourceInfo info : connection.getResources()) {
-            if (info.getName().equals("mycc")) {
+            if (info.getName().equals("sacc")) {
                 resourceInfo = info;
             }
 
