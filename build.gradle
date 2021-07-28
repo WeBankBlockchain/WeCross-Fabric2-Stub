@@ -136,7 +136,7 @@ shadowJar {
 
     // minimize() // Enable this leads to tcnative core
 
-    // relocate 'io.netty', 'io.netty.fabric'
+    relocate 'org.hyperledger.fabric.', 'org.hyperledger.fabric2.'
 }
 
 
