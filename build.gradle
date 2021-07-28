@@ -13,7 +13,7 @@ apply plugin: 'java'
 apply plugin: 'jacoco'
 apply plugin: 'com.github.johnrengelman.shadow'
 group 'com.webank.wecross'
-version '1.2.0-07200-SNAPSHOT'
+version '1.2.0'
 
 sourceCompatibility = 1.8
 
@@ -79,6 +79,28 @@ sourceSets {
 jar.enabled = false
 project.tasks.assemble.dependsOn project.tasks.shadowJar
 
+task prepareProxyVendor(type: Exec) {
+    workingDir "src/main/resources/chaincode/WeCrossProxy"
+    if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
+        commandLine 'cmd', '/c', 'go get'
+        commandLine 'cmd', '/c', 'go mod vendor'
+    } else {
+        commandLine 'bash', '-c', 'go get'
+        commandLine 'bash', '-c', 'go mod vendor'
+    }
+}
+
+task prepareHubVendor(type: Exec) {
+    workingDir "src/main/resources/chaincode/WeCrossHub"
+    if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
+        commandLine 'cmd', '/c', 'go get'
+        commandLine 'cmd', '/c', 'go mod vendor'
+    } else {
+        commandLine 'bash', '-c', 'go get'
+        commandLine 'bash', '-c', 'go mod vendor'
+    }
+}
+
 shadowJar {
     destinationDir file('dist/apps')
     archiveName project.name + "-" + project.version + '.jar'
@@ -89,6 +111,9 @@ shadowJar {
                 'version': project.version,
         )
     }
+
+    dependsOn { prepareProxyVendor }
+    dependsOn { prepareHubVendor }
 
     doLast {
         copy {
