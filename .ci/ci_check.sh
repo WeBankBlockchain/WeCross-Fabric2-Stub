@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -e
-PROXY_SRC_DIR=src/main/resources/chaincode/WeCrossProxy
+PROXY_SRC_DIR=src/main/resources/chaincode-fabric2.0/WeCrossProxy
 PROXY_DEST_DIR=src/test/resources/chains/fabric2/chaincode/WeCrossProxy/src/github.com/WeCrossProxy
 
 ./gradlew verifyGoogleJavaFormat

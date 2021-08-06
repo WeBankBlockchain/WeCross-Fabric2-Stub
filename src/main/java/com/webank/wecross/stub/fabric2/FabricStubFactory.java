@@ -162,7 +162,7 @@ public class FabricStubFactory implements StubFactory {
     }
 
     public void generateProxyChaincodes(String path) {
-        String srcPath = "chaincode" + File.separator + "WeCrossProxy";
+        String srcPath = "chaincode-fabric2.0" + File.separator + "WeCrossProxy";
         String destPath =
                 path
                         + File.separator
@@ -178,7 +178,7 @@ public class FabricStubFactory implements StubFactory {
 
     public void generateHubChaincodes(String path) {
 
-        String srcPath = "chaincode" + File.separator + "WeCrossHub";
+        String srcPath = "chaincode-fabric2.0" + File.separator + "WeCrossHub";
         String destPath =
                 path
                         + File.separator

@@ -83,7 +83,7 @@ public class SystemChaincodeUtility {
                         + File.separator
                         + chainPath
                         + File.separator
-                        + "chaincode"
+                        + "chaincode-fabric2.0"
                         + File.separator
                         + chaincodeName;
         System.out.println("sourcePath------->" + sourcePath);
