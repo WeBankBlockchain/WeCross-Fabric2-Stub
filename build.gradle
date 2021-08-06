@@ -70,8 +70,8 @@ sourceSets {
             exclude '**/*.yml'
             exclude '**/*.crt'
             exclude '**/*.key'
-            include 'chaincode/WeCrossProxy/**'
-            include 'chaincode/WeCrossHub/**'
+            include 'chaincode-fabric2.0/WeCrossProxy/**'
+            include 'chaincode-fabric2.0/WeCrossHub/**'
         }
     }
 }
@@ -80,7 +80,7 @@ jar.enabled = false
 project.tasks.assemble.dependsOn project.tasks.shadowJar
 
 task prepareProxyVendor(type: Exec) {
-    workingDir "src/main/resources/chaincode/WeCrossProxy"
+    workingDir "src/main/resources/chaincode-fabric2.0/WeCrossProxy"
     if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
         commandLine 'cmd', '/c', 'go get'
         commandLine 'cmd', '/c', 'go mod vendor'
@@ -91,7 +91,7 @@ task prepareProxyVendor(type: Exec) {
 }
 
 task prepareHubVendor(type: Exec) {
-    workingDir "src/main/resources/chaincode/WeCrossHub"
+    workingDir "src/main/resources/chaincode-fabric2.0/WeCrossHub"
     if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
         commandLine 'cmd', '/c', 'go get'
         commandLine 'cmd', '/c', 'go mod vendor'
