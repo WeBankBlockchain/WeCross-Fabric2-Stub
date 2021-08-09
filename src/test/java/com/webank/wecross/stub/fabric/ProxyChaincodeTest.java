@@ -33,7 +33,7 @@ public class ProxyChaincodeTest {
     private ResourceInfo testChaincodeResourceInfo;
     private String testChaincodeName = "testsacc-" + String.valueOf(System.currentTimeMillis());
     private String[] orgNames = {"Org1", "Org2"};
-    private String[] orgAdminNames = {"fabric_admin_org1", "fabric_admin_org2"};
+    private String[] orgAdminNames = {"fabric2_admin_org1", "fabric2_admin_org2"};
 
     public ProxyChaincodeTest() throws Exception {
         connection = FabricConnectionFactory.build("classpath:" + File.separator + chainPath);

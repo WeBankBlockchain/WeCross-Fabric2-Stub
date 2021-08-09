@@ -2,7 +2,7 @@
 
 set -e
 PROXY_SRC_DIR=src/main/resources/chaincode-fabric2.0/WeCrossProxy
-PROXY_DEST_DIR=src/test/resources/chains/fabric2/chaincode/WeCrossProxy/src/github.com/WeCrossProxy
+PROXY_DEST_DIR=conf/chains/fabric2/chaincode/WeCrossProxy/src/github.com/WeCrossProxy
 
 ./gradlew verifyGoogleJavaFormat
 
@@ -10,6 +10,7 @@ mkdir -p demo
 cd demo
 bash ../scripts/build_fabric_demo_chain.sh
 
+cp ../src/main/resources/stubs-sample/fabric/stub.toml certs/chains/fabric2
 cp -r certs/*  ../src/test/resources/
 
 cd -
