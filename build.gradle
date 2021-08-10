@@ -101,7 +101,28 @@ task prepareHubVendor(type: Exec) {
     }
 }
 
+project.tasks.shadowJar.dependsOn(project.tasks.prepareProxyVendor, project.tasks.prepareHubVendor)
 shadowJar {
+    exec {
+        workingDir "src/main/resources/chaincode-fabric2.0/WeCrossProxy"
+        if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
+            commandLine 'cmd', '/c', 'go get'
+            commandLine 'cmd', '/c', 'go mod vendor'
+        } else {
+            commandLine 'bash', '-c', 'go get'
+            commandLine 'bash', '-c', 'go mod vendor'
+        }
+    }
+    exec {
+        workingDir "src/main/resources/chaincode-fabric2.0/WeCrossHub"
+        if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
+            commandLine 'cmd', '/c', 'go get'
+            commandLine 'cmd', '/c', 'go mod vendor'
+        } else {
+            commandLine 'bash', '-c', 'go get'
+            commandLine 'bash', '-c', 'go mod vendor'
+        }
+    }
     destinationDir file('dist/apps')
     archiveName project.name + "-" + project.version + '.jar'
 
@@ -111,10 +132,6 @@ shadowJar {
                 'version': project.version,
         )
     }
-
-    dependsOn { prepareProxyVendor }
-    dependsOn { prepareHubVendor }
-
     doLast {
         copy {
             from file('src/main/resources/')

@@ -1,11 +1,10 @@
 [common]
-    name = 'fabric'
+    name = 'fabric2'
     type = 'Fabric2.0'
 
 [fabricServices]
     channelName = 'mychannel'
     orgUserName = 'fabric2_admin'
-    orgUserAccountPath = 'fabric_admin'
     ordererTlsCaFile = 'orderer-tlsca.crt'
     ordererAddress = 'grpcs://localhost:7050'
 
