@@ -2,7 +2,7 @@
 
 set -e
 PROXY_SRC_DIR=src/main/resources/chaincode-fabric2.0/WeCrossProxy
-PROXY_DEST_DIR=conf/chains/fabric2/chaincode/WeCrossProxy/src/github.com/WeCrossProxy
+PROXY_DEST_DIR=conf/chains/fabric2/chaincode-fabric2.0/WeCrossProxy/src/github.com/WeCrossProxy
 
 ./gradlew verifyGoogleJavaFormat
 
