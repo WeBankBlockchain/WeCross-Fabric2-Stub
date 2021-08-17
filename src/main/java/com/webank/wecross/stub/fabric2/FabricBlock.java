@@ -393,7 +393,7 @@ public class FabricBlock {
                         Identities.SerializedIdentity endorser =
                                 Identities.SerializedIdentity.parseFrom(endorsement.getEndorser());
 
-                        if (chaincodeEndorsedAction
+                        if (!chaincodeEndorsedAction
                                 .getProposalResponsePayload()
                                 .startsWith(ByteString.copyFromUtf8("\n"))) {
                             // ignore orderer transaction
