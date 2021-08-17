@@ -392,6 +392,14 @@ public class FabricBlock {
                         // a endorsement of tx
                         Identities.SerializedIdentity endorser =
                                 Identities.SerializedIdentity.parseFrom(endorsement.getEndorser());
+
+                        if (chaincodeEndorsedAction
+                                .getProposalResponsePayload()
+                                .equals(ByteString.copyFromUtf8("Application"))) {
+                            // ignore orderer transaction
+                            continue;
+                        }
+
                         ByteString plainText =
                                 chaincodeEndorsedAction
                                         .getProposalResponsePayload()

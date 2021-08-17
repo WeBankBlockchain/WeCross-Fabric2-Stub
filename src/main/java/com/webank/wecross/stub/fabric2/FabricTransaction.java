@@ -179,15 +179,23 @@ public class FabricTransaction {
                         throws Exception {
                     this.chaincodeEndorsedAction = chaincodeEndorsedAction;
 
-                    ProposalResponsePackage.ProposalResponsePayload proposalResponsePayload =
-                            ProposalResponsePackage.ProposalResponsePayload.parseFrom(
-                                    this.chaincodeEndorsedAction.getProposalResponsePayload());
-                    org.hyperledger.fabric.protos.peer.ProposalPackage.ChaincodeAction
-                            chaincodeAction =
-                                    org.hyperledger.fabric.protos.peer.ProposalPackage
-                                            .ChaincodeAction.parseFrom(
-                                            proposalResponsePayload.getExtension());
-                    this.output = chaincodeAction.getResponse().getPayload();
+                    if (this.chaincodeEndorsedAction
+                            .getProposalResponsePayload()
+                            .equals(ByteString.copyFromUtf8("Application"))) {
+                        // orderer transaction
+                        this.output = this.chaincodeEndorsedAction.getProposalResponsePayload();
+                    } else {
+                        // normal transaction
+                        ProposalResponsePackage.ProposalResponsePayload proposalResponsePayload =
+                                ProposalResponsePackage.ProposalResponsePayload.parseFrom(
+                                        this.chaincodeEndorsedAction.getProposalResponsePayload());
+                        org.hyperledger.fabric.protos.peer.ProposalPackage.ChaincodeAction
+                                chaincodeAction =
+                                        org.hyperledger.fabric.protos.peer.ProposalPackage
+                                                .ChaincodeAction.parseFrom(
+                                                proposalResponsePayload.getExtension());
+                        this.output = chaincodeAction.getResponse().getPayload();
+                    }
                 }
 
                 public String getOutput() {
