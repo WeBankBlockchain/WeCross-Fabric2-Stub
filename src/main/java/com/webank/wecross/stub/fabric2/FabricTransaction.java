@@ -179,9 +179,9 @@ public class FabricTransaction {
                         throws Exception {
                     this.chaincodeEndorsedAction = chaincodeEndorsedAction;
 
-                    if (this.chaincodeEndorsedAction
+                    if (!this.chaincodeEndorsedAction
                             .getProposalResponsePayload()
-                            .equals(ByteString.copyFromUtf8("Application"))) {
+                            .startsWith(ByteString.copyFromUtf8("\n"))) {
                         // orderer transaction
                         this.output = this.chaincodeEndorsedAction.getProposalResponsePayload();
                     } else {
