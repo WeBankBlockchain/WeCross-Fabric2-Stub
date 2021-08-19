@@ -1,21 +1,20 @@
 [common]
-    name = 'fabric'
+    name = 'fabric2'
     type = 'Fabric2.0'
 
 [fabricServices]
     channelName = 'mychannel'
-    orgUserName = 'fabric_admin'
-    orgUserAccountPath = 'fabric_admin'
+    orgUserName = 'fabric2_admin'
     ordererTlsCaFile = 'orderer-tlsca.crt'
     ordererAddress = 'grpcs://localhost:7050'
 
 [orgs]
     [orgs.org1]
         tlsCaFile = 'org1-tlsca.crt'
-        adminName = 'fabric_admin_org1'
+        adminName = 'fabric2_admin_org1'
         endorsers = ['grpcs://localhost:7051']
 
-#    [orgs.org2]
-#        tlsCaFile = 'org2-tlsca.crt'
-#        adminName = 'fabric_admin_org2'
-#        endorsers = ['grpcs://localhost:9051']
+    [orgs.org2]
+        tlsCaFile = 'org2-tlsca.crt'
+        adminName = 'fabric2_admin_org2'
+        endorsers = ['grpcs://localhost:9051']
