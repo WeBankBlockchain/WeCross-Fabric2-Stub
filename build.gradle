@@ -13,7 +13,7 @@ apply plugin: 'java'
 apply plugin: 'jacoco'
 apply plugin: 'com.github.johnrengelman.shadow'
 group 'com.webank.wecross'
-version '1.1.1-05241-SNAPSHOT'
+version '1.2.0'
 
 sourceCompatibility = 1.8
 
@@ -70,8 +70,8 @@ sourceSets {
             exclude '**/*.yml'
             exclude '**/*.crt'
             exclude '**/*.key'
-            include 'chaincode/WeCrossProxy/**'
-            include 'chaincode/WeCrossHub/**'
+            include 'chaincode-fabric2.0/WeCrossProxy/**'
+            include 'chaincode-fabric2.0/WeCrossHub/**'
         }
     }
 }
@@ -79,7 +79,50 @@ sourceSets {
 jar.enabled = false
 project.tasks.assemble.dependsOn project.tasks.shadowJar
 
+task prepareProxyVendor(type: Exec) {
+    workingDir "src/main/resources/chaincode-fabric2.0/WeCrossProxy"
+    if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
+        commandLine 'cmd', '/c', 'go get'
+        commandLine 'cmd', '/c', 'go mod vendor'
+    } else {
+        commandLine 'bash', '-c', 'go get'
+        commandLine 'bash', '-c', 'go mod vendor'
+    }
+}
+
+task prepareHubVendor(type: Exec) {
+    workingDir "src/main/resources/chaincode-fabric2.0/WeCrossHub"
+    if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
+        commandLine 'cmd', '/c', 'go get'
+        commandLine 'cmd', '/c', 'go mod vendor'
+    } else {
+        commandLine 'bash', '-c', 'go get'
+        commandLine 'bash', '-c', 'go mod vendor'
+    }
+}
+
+project.tasks.shadowJar.dependsOn(project.tasks.prepareProxyVendor, project.tasks.prepareHubVendor)
 shadowJar {
+    exec {
+        workingDir "src/main/resources/chaincode-fabric2.0/WeCrossProxy"
+        if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
+            commandLine 'cmd', '/c', 'go get'
+            commandLine 'cmd', '/c', 'go mod vendor'
+        } else {
+            commandLine 'bash', '-c', 'go get'
+            commandLine 'bash', '-c', 'go mod vendor'
+        }
+    }
+    exec {
+        workingDir "src/main/resources/chaincode-fabric2.0/WeCrossHub"
+        if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
+            commandLine 'cmd', '/c', 'go get'
+            commandLine 'cmd', '/c', 'go mod vendor'
+        } else {
+            commandLine 'bash', '-c', 'go get'
+            commandLine 'bash', '-c', 'go mod vendor'
+        }
+    }
     destinationDir file('dist/apps')
     archiveName project.name + "-" + project.version + '.jar'
 
@@ -89,7 +132,6 @@ shadowJar {
                 'version': project.version,
         )
     }
-
     doLast {
         copy {
             from file('src/main/resources/')
@@ -111,7 +153,7 @@ shadowJar {
 
     // minimize() // Enable this leads to tcnative core
 
-    // relocate 'io.netty', 'io.netty.fabric'
+    relocate 'org.hyperledger.fabric.', 'org.hyperledger.fabric2.'
 }
 
 

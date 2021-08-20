@@ -14,7 +14,6 @@ import org.hyperledger.fabric.sdk.Orderer;
 import org.hyperledger.fabric.sdk.Peer;
 import org.hyperledger.fabric.sdk.User;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
-import org.hyperledger.fabric.sdk.exception.TransactionException;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,7 +57,8 @@ public class FabricConnectionFactory {
                     configFile.getOrgs().entrySet()) {
 
                 HFClient hfClient = buildClient(orgEntry.getValue().getAdminName());
-                Map<String, Peer> peersMap = buildPeersMap(hfClient, configFile);
+                Map<String, Peer> peersMap =
+                        buildOrgPeersMap(hfClient, orgEntry.getKey(), orgEntry.getValue());
                 Channel channel = buildChannel(hfClient, peersMap, configFile);
                 ThreadPoolTaskExecutor threadPool = buildThreadPool(configFile);
                 FabricConnection fabricConnection =
@@ -127,14 +127,54 @@ public class FabricConnectionFactory {
             String orgName = orgEntry.getKey();
             FabricStubConfigParser.Orgs.Org org = orgEntry.getValue();
 
+            String orgUserName = org.getAdminName();
+            String mspID =
+                    FabricAccountFactory.getMspID(
+                            orgUserName, "classpath:accounts" + File.separator + orgUserName);
+
             for (String peerAddress : org.getEndorsers()) {
                 String name = "peer-" + String.valueOf(index);
                 peersMap.put(
-                        name, buildPeer(client, peerAddress, org.getTlsCaFile(), orgName, index));
+                        name,
+                        buildPeer(
+                                client,
+                                peerAddress,
+                                org.getTlsCaFile(),
+                                orgName,
+                                index,
+                                org.getHostnameOverride(),
+                                mspID));
                 index++;
             }
         }
 
+        return peersMap;
+    }
+
+    public static Map<String, Peer> buildOrgPeersMap(
+            HFClient client, String orgName, FabricStubConfigParser.Orgs.Org org) throws Exception {
+        Map<String, Peer> peersMap = new LinkedHashMap<>();
+        int index = 0;
+
+        String orgUserName = org.getAdminName();
+        String mspID =
+                FabricAccountFactory.getMspID(
+                        orgUserName, "classpath:accounts" + File.separator + orgUserName);
+
+        for (String peerAddress : org.getEndorsers()) {
+            String name = "peer-" + String.valueOf(index);
+            peersMap.put(
+                    name,
+                    buildPeer(
+                            client,
+                            peerAddress,
+                            org.getTlsCaFile(),
+                            orgName,
+                            index,
+                            org.getHostnameOverride(),
+                            mspID));
+            index++;
+        }
         return peersMap;
     }
 
@@ -143,11 +183,18 @@ public class FabricConnectionFactory {
             HFClient client,
             Map<String, Peer> peersMap,
             FabricStubConfigParser fabricStubConfigParser)
-            throws InvalidArgumentException, TransactionException {
-        Orderer orderer1 = buildOrderer(client, fabricStubConfigParser);
+            throws Exception {
         Channel channel =
                 client.newChannel(fabricStubConfigParser.getFabricServices().getChannelName());
-        channel.addOrderer(orderer1);
+
+        String orgUserName = fabricStubConfigParser.getFabricServices().getOrgUserName();
+        String mspID =
+                FabricAccountFactory.getMspID(
+                        orgUserName, "classpath:accounts" + File.separator + orgUserName);
+
+        Orderer orderer = buildOrderer(client, fabricStubConfigParser, mspID);
+
+        channel.addOrderer(orderer);
 
         for (Peer peer : peersMap.values()) {
             channel.addPeer(peer);
@@ -158,7 +205,7 @@ public class FabricConnectionFactory {
     }
 
     public static Orderer buildOrderer(
-            HFClient client, FabricStubConfigParser fabricStubConfigParser)
+            HFClient client, FabricStubConfigParser fabricStubConfigParser, String mspID)
             throws InvalidArgumentException {
         Properties orderer1Prop = new Properties();
         orderer1Prop.setProperty(
@@ -167,9 +214,13 @@ public class FabricConnectionFactory {
         orderer1Prop.setProperty("sslProvider", "JDK");
         orderer1Prop.setProperty("negotiationType", "TLS");
         orderer1Prop.setProperty("ordererWaitTimeMilliSecs", "300000");
-        orderer1Prop.setProperty("hostnameOverride", "orderer");
+        orderer1Prop.setProperty(
+                "hostnameOverride",
+                fabricStubConfigParser.getFabricServices().getHostnameOverride());
         orderer1Prop.setProperty("trustServerCertificate", "true");
         orderer1Prop.setProperty("allowAllHostNames", "true");
+        orderer1Prop.setProperty(
+                FabricType.ORG_MSP_DEF, mspID); // ORG_NAME_DEF is only used by wecross
         Orderer orderer =
                 client.newOrderer(
                         "orderer",
@@ -179,18 +230,26 @@ public class FabricConnectionFactory {
     }
 
     public static Peer buildPeer(
-            HFClient client, String address, String tlsCaFile, String orgName, Integer index)
+            HFClient client,
+            String address,
+            String tlsCaFile,
+            String orgName,
+            Integer index,
+            String hostnameOverride,
+            String mspID)
             throws InvalidArgumentException {
         Properties peer0Prop = new Properties();
         peer0Prop.setProperty("pemFile", tlsCaFile);
         // peer0Prop.setProperty("sslProvider", "openSSL");
         peer0Prop.setProperty("sslProvider", "JDK");
         peer0Prop.setProperty("negotiationType", "TLS");
-        peer0Prop.setProperty("hostnameOverride", "peer0");
+        peer0Prop.setProperty("hostnameOverride", hostnameOverride);
         peer0Prop.setProperty("trustServerCertificate", "true");
         peer0Prop.setProperty("allowAllHostNames", "true");
         peer0Prop.setProperty(
                 FabricType.ORG_NAME_DEF, orgName); // ORG_NAME_DEF is only used by wecross
+        peer0Prop.setProperty(
+                FabricType.ORG_MSP_DEF, mspID); // ORG_NAME_DEF is only used by wecross
         Peer peer = client.newPeer("peer" + index, address, peer0Prop);
         return peer;
     }

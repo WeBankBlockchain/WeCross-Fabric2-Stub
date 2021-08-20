@@ -74,4 +74,5 @@ public class FabricType {
     }
 
     public static final String ORG_NAME_DEF = "orgName_w";
+    public static final String ORG_MSP_DEF = "orgMsp_w";
 }
