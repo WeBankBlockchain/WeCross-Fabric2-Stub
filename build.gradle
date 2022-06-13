@@ -43,7 +43,7 @@ verifyGoogleJavaFormat {
 dependencies {
 
     implementation 'com.moandjiezana.toml:toml4j:0.7.2'
-    implementation 'org.slf4j:slf4j-api:1.7.25'
+    implementation 'org.slf4j:slf4j-api:1.7.36'
 
     // Fabric
     implementation 'javassist:javassist:3.12.1.GA'
@@ -58,7 +58,7 @@ dependencies {
     configurations.compile.exclude(group: 'org.apache.logging.log4j')
 
     // Use JUnit test framework
-    testImplementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.13.2'
 }
 
 sourceSets {
