@@ -13,7 +13,7 @@ apply plugin: 'java'
 apply plugin: 'jacoco'
 apply plugin: 'com.github.johnrengelman.shadow'
 group 'com.webank.wecross'
-version '1.2.0'
+version '1.2.3'
 
 sourceCompatibility = 1.8
 
@@ -41,6 +41,10 @@ verifyGoogleJavaFormat {
 
 
 dependencies {
+    constraints {
+        compile group: 'io.netty', name: 'netty-all', version: '4.1.77.Final'
+        compile group: 'org.fisco-bcos', name: 'tcnative', version: '2.0.51.0'
+    }
 
     implementation 'com.moandjiezana.toml:toml4j:0.7.2'
     implementation 'org.slf4j:slf4j-api:1.7.36'
@@ -53,7 +57,10 @@ dependencies {
     // implementation 'io.netty:netty-tcnative-boringssl-static:2.0.27.Final'
 
     // WeCross
-    implementation 'com.webank:wecross-java-stub:1.1.1'
+    implementation ('com.webank:wecross-java-stub:1.2.1') {
+        exclude group: 'io.netty'
+    }
+    implementation 'io.netty:netty-all'
     configurations.compile.exclude(group: 'ch.qos.logback')
     configurations.compile.exclude(group: 'org.apache.logging.log4j')
 
