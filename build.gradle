@@ -65,7 +65,9 @@ dependencies {
     // implementation 'io.netty:netty-tcnative-boringssl-static:2.0.27.Final'
 
     // WeCross
-    implementation 'com.webank:wecross-java-stub:1.2.1'
+    implementation ('com.webank:wecross-java-stub:1.2.1') {
+        exclude group: 'org.fisco-bcos', module: 'tcnative'
+    }
     configurations.compile.exclude(group: 'ch.qos.logback')
     configurations.compile.exclude(group: 'org.apache.logging.log4j')
 
