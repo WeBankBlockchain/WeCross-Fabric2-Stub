@@ -41,7 +41,7 @@ verifyGoogleJavaFormat {
 }
 
 
-def log4j_version="2.15.0"
+def log4j_version="2.19.0"
 List logger = [
         "org.apache.logging.log4j:log4j-api:$log4j_version",
         //"org.apache.logging.log4j:log4j-core:$log4j_version",
@@ -65,14 +65,14 @@ dependencies {
     // implementation 'io.netty:netty-tcnative-boringssl-static:2.0.27.Final'
 
     // WeCross
-    implementation ('com.webank:wecross-java-stub:1.2.1') {
+    implementation ('com.webank:wecross-java-stub:1.3.0-SNAPSHOT') {
         exclude group: 'org.fisco-bcos', module: 'tcnative'
     }
     configurations.compile.exclude(group: 'ch.qos.logback')
     configurations.compile.exclude(group: 'org.apache.logging.log4j')
 
     // Use JUnit test framework
-    testImplementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.13.1'
 }
 
 sourceSets {
