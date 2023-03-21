@@ -54,8 +54,12 @@ List logger = [
 dependencies {
     compile logger
 
-    implementation 'com.moandjiezana.toml:toml4j:0.7.2'
+    implementation ('com.moandjiezana.toml:toml4j:0.7.2') {
+        exclude group: 'com.google.code.gson', module: 'gson'
+    }
+    implementation 'com.google.code.gson:gson:2.8.9'
     implementation 'org.slf4j:slf4j-api:1.7.32'
+    implementation 'org.yaml:snakeyaml:2.0'
 
     // Fabric
     implementation 'javassist:javassist:3.12.1.GA'
