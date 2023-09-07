@@ -16,15 +16,19 @@ public class FabricTransaction {
 
     private List<TransactionAction> transactionActionList = new ArrayList<>();
     private String txID;
+    private long timestamp = 0;
 
     FabricTransaction(byte[] payloadBytes) throws Exception {
 
         Common.Payload transactionPayload = Common.Payload.parseFrom(payloadBytes);
         this.header = transactionPayload.getHeader();
-        this.txID = Common.ChannelHeader.parseFrom(header.getChannelHeader()).getTxId();
+        Common.ChannelHeader channelHeader =
+                Common.ChannelHeader.parseFrom(header.getChannelHeader());
+        this.txID = channelHeader.getTxId();
         this.transaction =
                 org.hyperledger.fabric.protos.peer.TransactionPackage.Transaction.parseFrom(
                         transactionPayload.getData());
+        timestamp = channelHeader.getTimestamp().getSeconds();
         for (org.hyperledger.fabric.protos.peer.TransactionPackage.TransactionAction action :
                 transaction.getActionsList()) {
             transactionActionList.add(new TransactionAction(action));
@@ -72,6 +76,10 @@ public class FabricTransaction {
                 .getChaincodeAction()
                 .getEndorsedAction()
                 .getOutputBytes();
+    }
+
+    public long getTimestamp() {
+        return timestamp;
     }
 
     public static class TransactionAction {

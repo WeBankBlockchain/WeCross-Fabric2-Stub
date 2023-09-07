@@ -601,15 +601,17 @@ public class FabricDriver implements Driver {
                                                             + txBlockNumber
                                                             + ")");
                                 } else {
+                                    FabricTransaction fabricTransaction =
+                                            FabricTransaction.buildFromPayloadBytes(
+                                                    ordererPayloadToSign);
                                     response =
                                             decodeTransactionResponse(
-                                                    FabricTransaction.buildFromPayloadBytes(
-                                                                    ordererPayloadToSign)
-                                                            .getOutputBytes());
+                                                    fabricTransaction.getOutputBytes());
                                     response.setHash(txID);
                                     response.setBlockNumber(txBlockNumber);
                                     response.setErrorCode(
                                             FabricType.TransactionResponseStatus.SUCCESS);
+                                    response.setTimestamp(fabricTransaction.getTimestamp());
                                     response.setMessage("Success");
                                     transactionException =
                                             TransactionException.Builder.newSuccessException();
@@ -1458,6 +1460,7 @@ public class FabricDriver implements Driver {
         ByteString payload = ByteString.copyFrom(outputBytes);
         String[] output = new String[] {payload.toStringUtf8()};
         transaction.getTransactionResponse().setResult(output);
+        transaction.getTransactionResponse().setTimestamp(fabricTransaction.getTimestamp());
 
         /** xa */
         transaction.setTransactionByProxy(byProxy);
