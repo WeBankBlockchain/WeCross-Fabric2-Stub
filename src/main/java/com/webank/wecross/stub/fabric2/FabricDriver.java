@@ -4,6 +4,7 @@ import static com.webank.wecross.stub.fabric2.utils.FabricUtils.bytesToLong;
 import static com.webank.wecross.stub.fabric2.utils.FabricUtils.longToBytes;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.webank.wecross.stub.*;
 import com.webank.wecross.stub.fabric2.FabricCustomCommand.ApproveChaincodeRequest;
 import com.webank.wecross.stub.fabric2.FabricCustomCommand.CommitChaincodeRequest;
@@ -24,7 +25,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.hyperledger.fabric.protos.common.Common;
 import org.hyperledger.fabric.protos.peer.lifecycle.Lifecycle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -400,7 +403,6 @@ public class FabricDriver implements Driver {
                         block.setRawBytes(response.getData());
 
                         FabricBlock fabricBlock = null;
-                        List<String> transactionsHashes = new ArrayList<>();
                         try {
                             fabricBlock = FabricBlock.encode(response.getData());
                             if (blockVerifierString != null) {
@@ -429,11 +431,48 @@ public class FabricDriver implements Driver {
                             }
 
                             if (!onlyHeader) {
-                                transactionsHashes = new ArrayList<>(fabricBlock.getValidTxs());
+                                Common.Block b = Common.Block.parseFrom(response.getData());
+                                List<ByteString> dataList = b.getData().getDataList();
+                                for (ByteString data : dataList) {
+                                    try {
+                                        Common.Envelope envelope = Common.Envelope.parseFrom(data);
+                                        String payload = envelope.toString();
+                                        int from = payload.indexOf("-----BEGIN CERTIFICATE-----");
+                                        int end = payload.indexOf("-----END CERTIFICATE-----");
+                                        String identity =
+                                                payload.substring(from, end)
+                                                        + "-----END CERTIFICATE-----\n";
+                                        FabricTransaction fabricTransaction =
+                                                FabricTransaction.buildFromEnvelopeBytes(
+                                                        envelope.toByteArray());
+                                        if (StringUtils.isBlank(fabricTransaction.getTxID())) {
+                                            continue;
+                                        }
+                                        Transaction transaction =
+                                                parseFabricTransaction(fabricTransaction);
+                                        transaction
+                                                .getTransactionResponse()
+                                                .setErrorCode(
+                                                        FabricType.TransactionResponseStatus
+                                                                .SUCCESS);
+                                        transaction.setAccountIdentity(identity);
+                                        transaction
+                                                .getTransactionResponse()
+                                                .setHash(fabricTransaction.getTxID());
+                                        transaction.setTxBytes(data.toByteArray());
+                                        transaction
+                                                .getTransactionResponse()
+                                                .setBlockNumber(blockNumber);
+                                        block.getTransactionsWithDetail().add(transaction);
+                                    } catch (InvalidProtocolBufferException e) {
+                                        logger.warn(
+                                                "Invalid fabric block transactions,blockNumber: {},e: {}",
+                                                blockNumber,
+                                                e.getMessage());
+                                    }
+                                }
                             }
                             block.setBlockHeader(fabricBlock.dumpWeCrossHeader());
-                            block.setTransactionsHashes(transactionsHashes);
-
                             callback.onResponse(null, block);
                         } catch (Exception e) {
                             String errorMsg =
