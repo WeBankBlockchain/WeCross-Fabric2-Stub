@@ -63,7 +63,7 @@ dependencies {
 
     // Fabric
     implementation 'javassist:javassist:3.12.1.GA'
-    implementation("org.hyperledger.fabric-sdk-java:fabric-sdk-java:2.2.26") {
+    implementation("org.hyperledger.fabric-sdk-java:fabric-sdk-java:2.0.0") {
         exclude group: 'io.netty'
         exclude group: 'org.apache.logging.log4j'
         exclude group: 'log4j'
